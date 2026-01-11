@@ -11,20 +11,19 @@ from pyais.filter import haversine
 import gc
 import mysql.connector
 from cpa_tcpa import cpa_tcpa
-#from speech import call_ship 
+#from speech import call_ship
 #from pyais import decode
 
 #flatpak run io.dbeaver.DBeaverCommunity
 
 host = 'localhost'
-#host1 = 'ais-watch.local'
 port = 10110
 jemgum_lat = 53.26417
 jemgum_lon = 7.396137
 # 53.2641733575126° , 7.396137714385986°
 jemgum = (jemgum_lat,jemgum_lon)
 # 53.269537800047864° , 7.396695613861085°
-north_border = (53.27338,7.3967) 
+north_border = (53.27338,7.3967)
 south_border = (53.25540, 7.394914627075195)
 
 print(haversine(jemgum,north_border))
@@ -33,17 +32,17 @@ print(haversine(jemgum,south_border))
 # Connect to MariaDB Platform
 try :
     conn = mysql.connector.connect(
-        user="nanno",
-        password="11082004",
+        user="user",
+        password="password
         host='localhost',
         port=3306,
         database="db_ais"
     )
-    
-except Exception as e: 
+
+except Exception as e:
     print(f"Error connecting to MariaDB Platform  {e}")
     sys.exit(1)
-    
+
 cur = conn.cursor()
 
 print("Connected")
@@ -82,7 +81,7 @@ create_track_table = """
         time  TIMESTAMP,
 
         PRIMARY KEY (mmsi,lon,lat)
-    );  
+    );
 """
 
 create_cpa_table = """
@@ -98,7 +97,7 @@ create_cpa_table = """
         time  TIMESTAMP,
 
         PRIMARY KEY (mmsi,lon,lat)
-    );  
+    );
 """
 
 add_cpa = ("""INSERT IGNORE INTO Cpa (mmsi,speed,lat,lon,course,heading,cpa,tcpa,last_updated) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) """)
@@ -178,7 +177,7 @@ def warning(mmsi):
         speed = ship[2]
         lat = ship[3]
         lon = ship[4]
-        course = ship[5] 
+        course = ship[5]
         heading = ship[6]
         name= ship[7]
         callsign = ship[8]
@@ -188,7 +187,7 @@ def warning(mmsi):
         #call_ship(mmsi,name,callsign)
     except Exception as e:
         print(e)
-    
+
 
 
 """
@@ -197,7 +196,7 @@ with pyais.AISTracker() as tracker:
 
     tracker.register_callback(AISTrackEvent.UPDATED, handle_update)
     tracker.register_callback(AISTrackEvent.DELETED, handle_delete)
-"""    
+"""
 
 def do_track():
         _cpa_tcpa = dict()
@@ -238,7 +237,7 @@ t1 = Thread(target=do_track,)
 t1.start()
 
 def ship_type(n):
-    return str(n)+" unavailable" 
+    return str(n)+" unavailable"
 
 def show():
     #gc.set_debug(gc.DEBUG_LEAK)
@@ -258,7 +257,7 @@ def show():
                 speed = ship[2]
                 lat = ship[3]
                 lon = ship[4]
-                course = ship[5] 
+                course = ship[5]
                 heading = ship[6]
                 name= ship[7]
                 callsign = ship[8]
