@@ -4,16 +4,17 @@ Talking AIS watcher
 import dataclasses
 import math
 from re import VERBOSE
-from attr import attr
 from pyais.filter import haversine
 from cpa_tracker import CPATrack
 from speech import speak, str_number
 from nationality import get_country
+from shipstype import shiptype
+
 
 
 HOST = 'localhost'
 PORT = 10110
-SILENT = False
+TALKING = True
 VERBOSE = True
 
 JEMGUM_LAT = 53.26379
@@ -54,38 +55,28 @@ FIELDS = dataclasses.fields(CPATrack)
 
 def nm_to_meters(nm):
     """Convert nautical miles to meters if less than 1 nM, otherwise no change."""
-    if nm < 1.0:
+    if nm < 1.0 and nm > 0:
         return nm * 1854, True
     return nm, False
 
-def hr_to_min(hr):
-    """Convert hours to minutes."""
-    if hr < 1.0:
-        return hr * 60, True
-    return hr, False
+def min_to_hr(minutes):
+    """Convert minutes to hours."""
+    if minutes > 120.0 and minutes > -120.0:
+        return minutes / 60, True
+    return minutes, False
 
 def do_warn(que, my_ship=None):
     """ do warning based on ais tracks """
     while True:
         msg = que.get()
-        if VERBOSE:
-            print("Warn got message:", msg)
-        mmsi = 0
-        shipname = "onbekend"
-        imo = 0
-        callsign = "onbekend"
-        course = 0.0
-        distance = 0.0
-        bearing = 0.0
-        cpa = 0.0
-        tcpa = 0.0
         bericht = ""
         for field in FIELDS:
-            print(f"Field: {field.name}")
-            print(f"Type: {field.type}")
-            print(f"Value: {getattr(msg, field.name)}")
-            print(f"Default: {field.default}")
-            print("-" * 20)
+            if VERBOSE:
+                print(f"Field: {field.name}")
+                print(f"Type: {field.type}")
+                print(f"Value: {getattr(msg, field.name)}")
+                print(f"Default: {field.default}")
+                print("-" * 20)
 
             if field.name == "mmsi":
                 mmsi = getattr(msg, field.name)
@@ -94,7 +85,7 @@ def do_warn(que, my_ship=None):
             elif field.name == "shipname":
                 shipname = getattr(msg, field.name)
                 if shipname is not None:
-                    bericht += " " + shipname + ","
+                    bericht += ", " + shipname + ","
             elif field.name == "callsign":
                 callsign = getattr(msg, field.name)
                 if callsign is not None:
@@ -106,9 +97,13 @@ def do_warn(que, my_ship=None):
                 bericht += "met " + str_number(int(getattr(msg, field.name))) + " knopen, "
             elif field.name == "heading":
                 heading = getattr(msg, field.name)
-                bericht += "met heading " + str_number(int(heading)) + " graden, "
+                if heading >= course + 5 or heading <= course - 5:
+                    bericht += "met heading " + str_number(int(heading)) + " graden, "
             elif field.name == "ship_type":
-                print("Ship type:", getattr(msg, field.name))
+                t = getattr(msg, field.name)
+                soort = shiptype(t)
+                print(soort)
+                bericht += "type schip: " + soort + ", "
             elif field.name == "destination":
                 print("Destination:", getattr(msg, field.name))
             elif field.name == "last_updated":
@@ -118,16 +113,14 @@ def do_warn(que, my_ship=None):
             elif field.name == "turn":
                 print("Turn:", getattr(msg, field.name))
             elif field.name == "distance":
-                distance = getattr(msg, field.name)
-                distance, waar = nm_to_meters(distance)
+                afstand, waar = nm_to_meters( getattr(msg, field.name))
                 if waar:
                     maat = " meter"
                 else:
                     maat = " mijl"
-                bericht += "nu op  " + str_number(int(distance)) + maat + " van ons vandaan"
+                bericht += "nu op  " + str_number(int(afstand)) + maat + " van ons vandaan"
             elif field.name == "bearing":
-                bearing = getattr(msg, field.name)
-                bericht += " in richting " + str_number(int(bearing)) + ", "
+                bericht += ", in richting " + str_number(int(getattr(msg, field.name))) + ", "
             elif field.name == "cpa":
                 cpa = getattr(msg, field.name)
                 cpa, waar = nm_to_meters(cpa)
@@ -138,11 +131,11 @@ def do_warn(que, my_ship=None):
                 bericht += "kleinste afstand " + str_number(int(cpa)) + maat
             elif field.name == "tcpa":
                 tcpa = getattr(msg, field.name)
-                tcpa, waar = hr_to_min(tcpa)
+                tcpa, waar = min_to_hr(tcpa)
                 if waar:
-                    maat = " minuten, "
-                else:
                     maat = " uur, "
+                else:
+                    maat = " minuten, "
                 bericht += "over " + str_number(int(tcpa)) + maat
 
         if isinstance(msg, CPATrack) :
@@ -150,9 +143,13 @@ def do_warn(que, my_ship=None):
             if VERBOSE:
                 print(warning)
 
-            if not SILENT:
+            if TALKING:
                 speak(warning)
     que.task_done()
 
 if __name__ == '__main__':
-   print("hr_to_min(0.5) =", hr_to_min(0.5) )
+    print("min_to_hr(100) =", min_to_hr(100) )
+    print("min_to_hr(200) =", min_to_hr(200) )
+    print("nm_to_meters(0.5) =", nm_to_meters(0.5) )
+    print("nm_to_meters(-0.5) =", nm_to_meters(-0.5) )
+    print("nm_to_meters(-1.5) =", nm_to_meters(-1.5) )
