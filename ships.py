@@ -12,7 +12,7 @@ class Ship(threading.Thread):
         threading.Thread.__init__(self)
         self.mmsi = mmsi
         self.y = lat*60
-        self.x = lon*60
+        self.x = lon*60 * cos(lat*pi/180)  # nautical miles OL
         self.course = course*pi/180 # course in rad
         self.speed = speed/60  # nm per min
         self.minute = 60
@@ -62,16 +62,17 @@ class Ship(threading.Thread):
 
     def get_longitude(self):
         """atribute getter"""
-        return self.x/60 # minutes OL
+        return self.x/ (60 * cos(self.get_latitude()*pi/180)) # minutes OL
 
 if __name__ == '__main__':
     my_ship = Ship(244030153, 53.26379, 7.39738, 180, 25.0)
     my_ship.start()
     print(my_ship.get_course(), my_ship.get_speed())
     for t0 in range(10):
-        time.sleep(60)
         for t1 in range(4):
-            print(f'Lattitude: {my_ship.get_latitude():.04}, longitude: {my_ship.get_longitude():.04}')
+            print(f'Lattitude: {my_ship.get_latitude():.3f}, longitude: {my_ship.get_longitude():.3f}')
             time.sleep(60)
         my_ship.set_course((my_ship.get_course()+90)%360)
-        print('new course', my_ship.get_course())
+        print(f'new course {my_ship.get_course():.2f}')
+        time.sleep(60)
+        

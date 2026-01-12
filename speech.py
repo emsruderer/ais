@@ -21,6 +21,7 @@ nl_hoderdtallen = ["honderd", "tweehonderd",]
 
 def str_number(number):
     """ convert number to spoken dutch text """
+    number = abs(int(number)) # ensure positive integer
     if number == 0:
         return "nul"
     elif number <= 20:

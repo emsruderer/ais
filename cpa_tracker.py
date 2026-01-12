@@ -39,6 +39,7 @@ class CPATrack():
     cpa : float = dataclasses.field(default=None, compare=False)
     distance : float = dataclasses.field(default=None, compare=False)
     bearing : float = dataclasses.field(default=None, compare=False)
+    approaching_speed: typing.Optional[float] = dataclasses.field(compare=False, default=None)
 
 # compute a set of all fields only once
 FIELDS = dataclasses.fields(CPATrack)
@@ -50,7 +51,9 @@ def cpa_to_track(msg: ANY_MESSAGE,cpa,ts_epoch_ms: typing.Optional[float] = None
     Depending on the type of the message, the implementation varies.
     ts_epoch_ms can be used as a timestamp for when the message was initially received.
     :param msg:         any decoded AIS message of type AISMessage.
-    :param ts_epoch_ms: optional timestamp for the message. If None (default) current time is used."""
+    :param cpa:         the CPA data for the message.
+    :param ts_epoch_ms: optional timestamp for the message.
+    If None (default) current time is used."""
     if ts_epoch_ms is None:
         track = CPATrack(mmsi=msg.mmsi)
     else:
@@ -68,6 +71,7 @@ def cpa_to_track(msg: ANY_MESSAGE,cpa,ts_epoch_ms: typing.Optional[float] = None
         setattr(track, 'tcpa', cpa['tcpa'])
         setattr(track, 'distance', cpa['distance'])
         setattr(track, 'bearing', cpa['bearing'])
+        setattr(track, 'approaching_speed', cpa['approaching_speed'])
     #print(track)
     return track
 
@@ -93,7 +97,7 @@ def poplast(dictionary: typing.Dict[typing.Any, typing.Any]) -> typing.Any:
 class CPATracker(pyais.tracker.AISTracker):
     """AISTracker subclass for CPA data"""
     track_class = CPATrack  # Use CPATrack for tracks
-    def __init__(self,  ttl_in_seconds: typing.Optional[int] = 600, stream_is_ordered: bool = False):
+    def __init__(self,ttl_in_seconds:typing.Optional[int] = 600,stream_is_ordered: bool = False):
         super().__init__(ttl_in_seconds, stream_is_ordered)
         self._tracks: typing.Dict[int, CPATrack] = {}  # { mmsi: CPATrack(), ...}
         self.ttl_in_seconds: typing.Optional[int] = ttl_in_seconds  # in seconds or None
@@ -162,7 +166,9 @@ class CPATracker(pyais.tracker.AISTracker):
         """Update the tracker with a new AIS message.
         If the track for the MMSI of the message does not exist, it is created.
         :param msg:         any decoded AIS message of type AISMessage.
-        :param ts_epoch_ms: optional timestamp for the message. If None (default) current time is used."""
+        :param cpa:         the CPA data for the message.
+        :param ts_epoch_ms: optional timestamp for the message.
+        If None (default) current time is used."""
         mmsi = int(msg.mmsi)
         track = cpa_to_track(msg, cpa, ts_epoch_ms)
         super().ensure_timestamp_constraints(track.last_updated)
@@ -212,4 +218,3 @@ class CPATracker(pyais.tracker.AISTracker):
 
         for mmsi in to_be_deleted:
             self.pop_track(mmsi)
-
