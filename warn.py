@@ -1,6 +1,7 @@
 """
 Talking AIS watcher
 """
+import time
 import dataclasses
 import math
 from re import VERBOSE
@@ -11,7 +12,6 @@ from nationality import get_country
 from shipstype import shiptype
 
 
-
 HOST = 'localhost'
 PORT = 10110
 TALKING = True
@@ -19,6 +19,13 @@ VERBOSE = True
 
 JEMGUM_LAT = 53.26379
 JEMGUM_LON = 7.39738
+
+FIELDS = dataclasses.fields(CPATrack)
+wait_dict = {}
+
+def next_call(tcpa):
+   """Calculate the next call time based on tcpa"""
+   return time.time() + (tcpa * 60)/2
 
 def nationaliteit(mmsi):
     """
@@ -51,17 +58,29 @@ def distance(lat,lon,lat2,lon2):
     else:
         return 0.0
 
-FIELDS = dataclasses.fields(CPATrack)
+def repeat_call(mmsi, tcpa):
+    """Determine if we should repeat the call for this mmsi based on tcpa"""
+    current_time = time.time()
+    if mmsi in wait_dict:
+        if current_time >= wait_dict[mmsi]:
+            wait_dict[mmsi] = next_call(tcpa)
+            return True
+        else:
+            return False
+    else:
+        wait_dict[mmsi] = next_call(tcpa)
+        return True
+
 
 def nm_to_meters(nm):
     """Convert nautical miles to meters if less than 1 nM, otherwise no change."""
-    if nm < 1.0 and nm > 0:
+    if 0.0 < nm < 1.0 :
         return nm * 1854, True
     return nm, False
 
 def min_to_hr(minutes):
     """Convert minutes to hours."""
-    if minutes > 120.0 and minutes > -120.0:
+    if minutes > 120.0:
         return minutes / 60, True
     return minutes, False
 
@@ -97,15 +116,18 @@ def do_warn(que, my_ship=None):
                 bericht += "met " + str_number(int(getattr(msg, field.name))) + " knopen, "
             elif field.name == "heading":
                 heading = getattr(msg, field.name)
-                if heading >= course + 5 or heading <= course - 5:
+                if heading != 511 and (heading >= course + 10 or heading <= course - 10):
                     bericht += "met heading " + str_number(int(heading)) + " graden, "
             elif field.name == "ship_type":
                 t = getattr(msg, field.name)
                 soort = shiptype(t)
-                print(soort)
                 bericht += "type schip: " + soort + ", "
             elif field.name == "destination":
-                print("Destination:", getattr(msg, field.name))
+                bestemming = getattr(msg, field.name)
+                if bestemming is not None:
+                    bericht += "op weg naar  " + bestemming +  ", "
+            elif field.name == "bearing":
+                bericht += ", in richting " + str_number(int(getattr(msg, field.name))) + ", "
             elif field.name == "last_updated":
                 print("Last updated:", getattr(msg, field.name))
             elif field.name == "status":
@@ -140,12 +162,9 @@ def do_warn(que, my_ship=None):
 
         if isinstance(msg, CPATrack) :
             warning = "Waarschuwing!,"  + bericht
-            if VERBOSE:
-                print(warning)
-
-            if TALKING:
-                speak(warning)
-    que.task_done()
+            print(warning)
+            if repeat_call(msg.mmsi, msg.tcpa):
+                    speak(warning)
 
 if __name__ == '__main__':
     print("min_to_hr(100) =", min_to_hr(100) )
@@ -153,3 +172,9 @@ if __name__ == '__main__':
     print("nm_to_meters(0.5) =", nm_to_meters(0.5) )
     print("nm_to_meters(-0.5) =", nm_to_meters(-0.5) )
     print("nm_to_meters(-1.5) =", nm_to_meters(-1.5) )
+    print("nm_to_meters(1.5) =", nm_to_meters(1.5) )
+    print("bearing(53.26379,7.39738,53.26300,7.40000) =", bearing(53.26379,7.39738,53.26300,7.40000) )
+    print("distance(53.26379,7.39738,53.26300,7.40000) =", distance(53.26379,7.39738,53.26300,7.40000) )
+    print("next_call(10) =", next_call(10) )
+    print("next_call(20) =", next_call(20) )
+    print("next_call(30) =", next_call(30) )
