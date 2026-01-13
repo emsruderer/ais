@@ -1,5 +1,6 @@
 """ ais NMEA 0183 stream from SignalK port 10110 """
 import sys
+
 from multiprocessing import Queue, Process
 from pyais.stream import TCPConnection
 from pyais.filter import FilterChain,MessageTypeFilter,NoneFilter
@@ -9,12 +10,13 @@ from cpa_tracker import CPATracker
 from ships import Ship
 from warn import do_warn
 
+
 HOST = "localhost"
 PORT = 10110
 VERBOSE = False
 MAX_MESSAGES = 100
-MINIMUM_CPA = 1.0 # nautical miles
-MINIMUM_TCPA = 15   # minutes
+MINIMUM_CPA = 7 # nautical miles
+MINIMUM_TCPA = 30  # minutes
 MINIMUM_DISTANCE = 10 # nautical miles
 
 """Define the filter chain with various criteria """
@@ -42,11 +44,11 @@ def live_print(tracks):
 
 print('\n' * 10)
 
-def danger(cpa,minimum_cpa=MINIMUM_CPA,minimum_tcpa=MINIMUM_TCPA,minimum_distance=MINIMUM_DISTANCE):
+def danger(cpa, minimum_cpa=MINIMUM_CPA,minimum_tcpa=MINIMUM_TCPA, minimum_distance=MINIMUM_DISTANCE):
     """Determine if a CPA is dangerous."""
-     # nautical miles
-    if cpa['tcpa'] is not None and cpa['tcpa'] < minimum_tcpa and cpa['tcpa'] > 0\
-         and cpa['cpa'] < minimum_cpa and cpa['distance'] < minimum_distance:
+    assert 'cpa' in cpa and 'tcpa' in cpa and 'distance' in cpa, "cpa dict must contain 'cpa', 'tcpa' and 'distance' keys"
+    # nautical miles
+    if  0 < cpa['tcpa'] < minimum_tcpa and -minimum_cpa <cpa['cpa'] < minimum_cpa: # and cpa['distance'] < minimum_distance:
         return True
     return False
 
@@ -57,7 +59,7 @@ def handle_create(track):
 
 def handle_update(track):
     """called every time an CPATrack is updated"""
-    print('updated',track)
+    #print('updated',track)
 
 
 def handle_delete(track):
@@ -91,7 +93,7 @@ def do_track(que, known_ship = None):
                 elif decoded.msg_type in [5,18,19,24]:
                     tracker.update(decoded, cpa_res)
                     #print("Updated non position message for MMSI ", decoded )
-                latest_tracks = tracker.n_latest_tracks(10)
+                #latest_tracks = tracker.n_latest_tracks(10)
                 #print_tracks(latest_tracks)
                 #live_print(latest_tracks)
 
