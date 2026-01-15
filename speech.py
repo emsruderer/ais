@@ -5,14 +5,12 @@ Dutch AIS talker
 # Import the required module for text
 # to speech conversion
 from gtts import gTTS
-from matplotlib import text
 from playsound3 import playsound
-import socket
 
 spell_alphabet = {'A' : 'Alpha', 'B' :'Bravo', 'C': 'Charlie', 'D' : 'Delta', 'E': 'Echo', 'F' : 'Foxtrot', 'G': 'Golf', 'H': 'Hotel',
                   'I':'India', 'J': 'Juliett','K': 'Kilo', 'L': 'Lima', 'M': 'Mike', 'N' : 'November', 'O': 'Oskar', 'P':'Papa',
-                  'Q': 'Quebec', 'R':'Romeo','S':'Sierra','T':'Tango','U':'Uniform','V':'Victor','W':'Whiskey','Y':'Yanke','Z':'Zoulou',
-                   '0':'0','1':'1','2':'2','3':'3','4':'4','5':'5','6':'6','7':'7','8':'8','9':'9'}
+                  'Q': 'Quebec', 'R':'Romeo','S':'Sierra','T':'Tango','U':'Uniform','V':'Victor','W':'Whiskey','X':'X-ray',
+                  'Y':'Yanke','Z':'Zoulou','0':'0','1':'1','2':'2','3':'3','4':'4','5':'5','6':'6','7':'7','8':'8','9':'9'}
 
 nl_number = [ "", " één", "twee", "drie","vier", "vijf", "zes", "zeven", "acht", "negen", "tien",\
               "elf", "twaalf", "dertien", "veertien","vijftien","zestien", "zeventien", "achttien", "negentien","twintig"]
