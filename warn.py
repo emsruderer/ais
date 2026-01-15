@@ -7,7 +7,7 @@ import math
 from re import VERBOSE
 from pyais.filter import haversine
 from cpa_tracker import CPATrack
-from speech import speak, str_number
+from speech import speak, spell_callsign, str_number
 from nationality import get_country
 from shipstype import shiptype
 
@@ -55,8 +55,7 @@ def distance(lat,lon,lat2,lon2):
     """Calculate distance between two lat/lon points in nautical miles"""
     if lat is not None and lon is not None:
         return haversine((lat2,lon2), (lat,lon))*1.854
-    else:
-        return 0.0
+    return 0.0
 
 def repeat_call(mmsi, tcpa):
     """Determine if we should repeat the call for this mmsi based on tcpa"""
@@ -104,11 +103,11 @@ def do_warn(que, my_ship=None):
             elif field.name == "shipname":
                 shipname = getattr(msg, field.name)
                 if shipname is not None:
-                    bericht += ", " + shipname + ","
+                    bericht += ", scheepsnaam " + shipname.lower() + ", "
             elif field.name == "callsign":
                 callsign = getattr(msg, field.name)
                 if callsign is not None:
-                    bericht += "en Roepnaam " + callsign + " "
+                    bericht += "en Roepnaam " + spell_callsign(callsign) + " "
             elif field.name == "course":
                 course = getattr(msg, field.name)
                 bericht += "op koers " + str_number(int(course)) + " graden, "
@@ -119,9 +118,10 @@ def do_warn(que, my_ship=None):
                 if heading != 511 and (heading >= course + 10 or heading <= course - 10):
                     bericht += "met heading " + str_number(int(heading)) + " graden, "
             elif field.name == "ship_type":
-                t = getattr(msg, field.name)
-                soort = shiptype(t)
-                bericht += "type schip: " + soort + ", "
+                if shiptype is not None:
+                    t = getattr(msg, field.name)
+                    soort = shiptype(t)
+                    bericht += "type schip: " + soort + ", "
             elif field.name == "destination":
                 bestemming = getattr(msg, field.name)
                 if bestemming is not None:

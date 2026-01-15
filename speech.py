@@ -5,7 +5,9 @@ Dutch AIS talker
 # Import the required module for text
 # to speech conversion
 from gtts import gTTS
+from matplotlib import text
 from playsound3 import playsound
+import socket
 
 spell_alphabet = {'A' : 'Alpha', 'B' :'Bravo', 'C': 'Charlie', 'D' : 'Delta', 'E': 'Echo', 'F' : 'Foxtrot', 'G': 'Golf', 'H': 'Hotel',
                   'I':'India', 'J': 'Juliett','K': 'Kilo', 'L': 'Lima', 'M': 'Mike', 'N' : 'November', 'O': 'Oskar', 'P':'Papa',
@@ -18,6 +20,12 @@ nl_number = [ "", " één", "twee", "drie","vier", "vijf", "zes", "zeven", "acht
 nl_tientallen = ["","tien","twintig","dertig","veertig", "vijftig","zestig", "zeventig", "tachtig", "negentig","honderd"]
 
 nl_hoderdtallen = ["honderd", "tweehonderd",]
+
+mmsi = 264030000
+shipsname = 'mijnboot'
+callsign = 'PC1234'
+
+
 
 def str_number(number):
     """ convert number to spoken dutch text """
@@ -48,8 +56,17 @@ def str_number(number):
     else:
         return "weet ik niet"
 
+def spell_callsign(callsign):
+    """ convert callsign to spoken text """
+    cs = ' '
+    for ch in callsign:
+        cs += spell_alphabet[ch] + ' '
+    return cs+', '
+
+
 def say_number(number):
     """ convert number to spoken dutch text """
+    gTTS(text=str_number(number), lang='nl', slow=False).save("call.mp2")
     gTTS(text=str_number(number), lang='nl', slow=False).save("call.mp2")
     playsound("call.mp2")
 
@@ -59,10 +76,12 @@ def speak(text: str):
     playsound("call.mp2")
 
 if __name__ == "__main__":
-    """Main function for testing
+    speak("AIS spraak bericht systeem gestart")
+    speak("Schip naam " + shipsname)
+    speak("MMSI " + str_number(mmsi))
+    speak("Oproep teken " + spell_callsign(callsign))
     for number in range(9,13):
-        speak(pre_text="Hallo", number=number, post_text = "Nanno")
-        speak("Hallo Nanno, het nummer is " + str_number(number))
+        speak(number=number)
     for i in range(19,22):
         speak(number=i)
     for i in range(199,203):
@@ -71,7 +90,6 @@ if __name__ == "__main__":
         speak(number=i)
     for i in range(2995,3005):
         speak(number=i)
-    """
     say_number(0)
     say_number(244030153)
        #cp = subprocess.run(playsound("call.mp2"),capture_output = True)

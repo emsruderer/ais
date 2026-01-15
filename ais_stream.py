@@ -15,9 +15,9 @@ HOST = "localhost"
 PORT = 10110
 VERBOSE = False
 MAX_MESSAGES = 100
-MINIMUM_CPA = 7 # nautical miles
+MINIMUM_CPA = 1 # nautical miles
 MINIMUM_TCPA = 30  # minutes
-MINIMUM_DISTANCE = 10 # nautical miles
+MINIMUM_DISTANCE = 5 # nautical miles
 
 """Define the filter chain with various criteria """
 chain = FilterChain([
@@ -101,7 +101,7 @@ def do_track(que, known_ship = None):
 if __name__ == '__main__':
     VERBOSE = True
     print(VERBOSE)
-    my_ship = Ship(244030153, 53.26379, 7.39738,0,5.0)
+    my_ship = Ship(244030153, 53.26379, 7.39738,0,1.0)
     my_ship.start()
     warn_que = Queue(MAX_MESSAGES)
     p1 = Process(target=do_track, args=(warn_que,my_ship,))
