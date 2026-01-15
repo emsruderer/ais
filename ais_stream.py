@@ -48,7 +48,7 @@ def danger(cpa, minimum_cpa=MINIMUM_CPA,minimum_tcpa=MINIMUM_TCPA, minimum_dista
     """Determine if a CPA is dangerous."""
     assert 'cpa' in cpa and 'tcpa' in cpa and 'distance' in cpa, "cpa dict must contain 'cpa', 'tcpa' and 'distance' keys"
     # nautical miles
-    if  0 < cpa['tcpa'] < minimum_tcpa and -minimum_cpa <cpa['cpa'] < minimum_cpa: # and cpa['distance'] < minimum_distance:
+    if  0.5< cpa['tcpa'] < minimum_tcpa and -minimum_cpa <cpa['cpa'] < minimum_cpa and cpa['distance'] < minimum_distance:
         return True
     return False
 
@@ -101,6 +101,7 @@ def do_track(que, known_ship = None):
 if __name__ == '__main__':
     VERBOSE = True
     print(VERBOSE)
+    print(danger({'cpa':0.5,'tcpa':20,'distance':3}))
     my_ship = Ship(244030153, 53.26379, 7.39738,0,1.0)
     my_ship.start()
     warn_que = Queue(MAX_MESSAGES)

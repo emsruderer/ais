@@ -15,7 +15,7 @@ from shipstype import shiptype
 HOST = 'localhost'
 PORT = 10110
 TALKING = True
-VERBOSE = True
+VERBOSE = False
 
 JEMGUM_LAT = 53.26379
 JEMGUM_LON = 7.39738
@@ -159,11 +159,10 @@ def do_warn(que, my_ship=None):
                 else:
                     maat = " minuten, "
                 bericht += "over " + str_number(int(tcpa)) + maat
-
         if isinstance(msg, CPATrack) :
             warning = "Waarschuwing!,"  + bericht
-            print(warning)
             if repeat_call(msg.mmsi, msg.tcpa):
+                    print(warning)
                     speak(warning)
 
 if __name__ == '__main__':
