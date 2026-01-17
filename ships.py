@@ -90,11 +90,11 @@ class Ship(threading.Thread):
 
     def get_latitude(self):
         """atribute getter"""
-        return self.y/60   # minutes NB
+        return self.lat  # minutes NB
 
     def get_longitude(self):
         """atribute getter"""
-        return self.x/ (60 * cos(self.get_latitude()*pi/180)) # minutes OL
+        return self.lon
 
     def decode_gll(self, vggll:str) -> dict:
         """Decode GLL NMEA sentence into a dictionary."""
@@ -210,31 +210,31 @@ class Ship(threading.Thread):
             buffer = ""
             print('socket opened')
             while True:
-                data = s.recv(4096).decode('utf-8')
-                if not data:
-                    break
-                buffer += data
-                while '\n' in buffer:
-                    line, buffer = buffer.split('\n', 1)
+                try:
+                    data = s.recv(4096).decode('utf-8')
+                    if not data:
+                        break
+                    buffer += data
+                    while '\n' in buffer:
+                        line, buffer = buffer.split('\n', 1)
 
-                    if line.startswith("$GRMC"):
-                        self.navigation = self.decode_rmc(line)
-                        yield self.navigation
-                    elif line.startswith("$GPGLL"):
-                        self.navigation = self.decode_gll(line)
-                        yield self.navigation
-                    elif line.startswith("$GPRMC"):
-                        self.navigation = self.decode_rmc(line)
-                        yield self.navigation
-                    elif line.startswith("$GPVTG"):
-                        self.navigation = self.decode_vts(line)
-                        yield self.navigation
-                    elif line.startswith("$GPZDA"):
-                        self.navigation = self.decode_zda(line)
-                        yield self.navigation
-                    elif line.startswith("$GPHDT"):
-                        self.navigation = self.decode_hdt(line)
-                        yield self.navigation
+                        if line.startswith("$GRMC"):
+                            self.navigation = self.decode_rmc(line)
+                            yield #self.navigation
+                        elif line.startswith("$GPGLL"):
+                            self.navigation = self.decode_gll(line)
+                            yield #self.navigation
+                        elif line.startswith("$GPVTG"):
+                            self.navigation = self.decode_vts(line)
+                            yield #self.navigation
+                        elif line.startswith("$GPZDA"):
+                            self.navigation = self.decode_zda(line)
+                            yield #self.navigation
+                        elif line.startswith("$GPHDT"):
+                            self.navigation = self.decode_hdt(line)
+                            yield #self.navigation
+                except Exception as ex:
+                    print(ex,line)
 
 if __name__ == '__main__':
     my_ship = Ship(244030153, 53.26379, 7.39738, 180, 1.0, '127.0.0.1', 10110)
