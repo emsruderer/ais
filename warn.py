@@ -10,7 +10,7 @@ from cpa_tracker import CPATrack
 from speech import speak, spell_callsign, str_number
 from nationality import get_country
 from shipstype import shiptype
-
+import ais_msg
 
 HOST = 'localhost'
 PORT = 10110
@@ -99,7 +99,7 @@ def do_warn(que, my_ship=None):
             if field.name == "mmsi":
                 mmsi = getattr(msg, field.name)
                 #bericht += "MMSI " + str_number(mmsi) + " "
-                bericht = "Naderend " + nationaliteit(mmsi) + "schip, "
+                bericht = "Naderend " + nationaliteit(mmsi) + "schip "
             elif field.name == "shipname":
                 shipname = getattr(msg, field.name)
                 if shipname is not None:
@@ -107,19 +107,19 @@ def do_warn(que, my_ship=None):
             elif field.name == "callsign":
                 callsign = getattr(msg, field.name)
                 if callsign is not None:
-                    bericht += "en Roepnaam " + spell_callsign(callsign) + " "
+                    bericht += " met roepnaam " + spell_callsign(callsign) + " "
             elif field.name == "course":
                 course = getattr(msg, field.name)
-                bericht += "op koers " + str_number(int(course)) + " graden, "
+                bericht += "op koers " + str_number(int(course)) + " graden "
             elif field.name == "speed":
-                bericht += "met " + str_number(int(getattr(msg, field.name))) + " knopen, "
+                bericht += "met " + str_number(int(getattr(msg, field.name))) + " knopen "
             elif field.name == "heading":
                 heading = getattr(msg, field.name)
                 if heading != 511 and (heading >= course + 10 or heading <= course - 10):
                     bericht += "met heading " + str_number(int(heading)) + " graden, "
             elif field.name == "ship_type":
-                if shiptype is not None:
-                    t = getattr(msg, field.name)
+                t = getattr(msg, field.name)
+                if t is not None:
                     soort = shiptype(t)
                     bericht += "type schip: " + soort + ", "
             elif field.name == "destination":
@@ -140,17 +140,17 @@ def do_warn(que, my_ship=None):
                     maat = " meter"
                 else:
                     maat = " mijl"
-                bericht += "nu op  " + str_number(int(afstand)) + maat + " van ons vandaan"
+                bericht += ", nu op " + str_number(int(afstand)) + maat + " van ons vandaan"
             elif field.name == "bearing":
-                bericht += ", in richting " + str_number(int(getattr(msg, field.name))) + ", "
+                bericht += ", peiling " + str_number(int(getattr(msg, field.name))) + ", "
             elif field.name == "cpa":
                 cpa = getattr(msg, field.name)
                 cpa, waar = nm_to_meters(cpa)
                 if waar:
-                    maat = " meter,"
+                    maat = " meter"
                 else:
-                    maat = " mijl,"
-                bericht += "kleinste afstand " + str_number(int(cpa)) + maat
+                    maat = " mijl"
+                bericht += " kleinste afstand " + str_number(int(cpa)) + maat
             elif field.name == "tcpa":
                 tcpa = getattr(msg, field.name)
                 tcpa, waar = min_to_hr(tcpa)
@@ -158,12 +158,12 @@ def do_warn(que, my_ship=None):
                     maat = " uur, "
                 else:
                     maat = " minuten, "
-                bericht += "over " + str_number(int(tcpa)) + maat
+                bericht += " over " + str_number(int(tcpa)) + maat
         if isinstance(msg, CPATrack) :
-            warning = "Waarschuwing!,"  + bericht
+            warning =  bericht
             if repeat_call(msg.mmsi, msg.tcpa):
-                    print(warning)
-                    speak(warning)
+                    ais_msg.add_msg(warning)
+                    #speak(warning)
 
 if __name__ == '__main__':
     print("min_to_hr(100) =", min_to_hr(100) )

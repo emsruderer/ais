@@ -12,6 +12,8 @@ from TTS.api import TTS
 # Get device
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 tts = TTS('tts_models/nl/css10/vits').to(DEVICE)
+FILENAME = 'output.wav'
+
 #print(tts.speakers)
 #tts = TTS('tts_models/multilingual/multi-dataset/xtts_v2').to(DEVICE)
 
@@ -62,7 +64,7 @@ def str_number(number):
         return str_number(number//1000000) + " miljoen " + str_number(number%1000000)
     return "weet ik niet"
 
-def spell_callsign(callsign):
+def spell_callsign(callsign: str):
     """ convert callsign to spoken text """
     cs = ' '
     for ch in callsign:
@@ -71,20 +73,39 @@ def spell_callsign(callsign):
     return cs+', '
 
 
-def say_number(number):
+def say_number(number : int):
     """ convert number to spoken dutch text """
     gTTS(text=str_number(number), lang='nl', slow=False).save("call.mp2")
     gTTS(text=str_number(number), lang='nl', slow=False).save("call.mp2")
     playsound("call.mp2")
 
 # TTS to a file, use a preset speaker
-def speak(txt: str):
+def speak_tts(txt: str):
     """ convert text to spoken dutch text """
     tts.tts_to_file(
         text= txt, #speaker = 'Craig Gutsy', language = 'nl',
         file_path='call.wav'
         )
     playsound("call.wav")
+
+def speak_gtts(txt: str, filename = FILENAME):
+    """
+    speak
+    :param txt: text to say
+    """
+    gtts = gTTS(txt, lang='nl')
+    gtts.save(filename)
+    playsound(filename)
+
+
+def speak(msg: str):
+    """
+    Docstring for speak
+
+    :param msg: string to speak
+    :type msg: str
+    """
+    speak_gtts(msg )
 
 
 if __name__ == "__main__":
