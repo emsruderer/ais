@@ -45,7 +45,7 @@ class VoiceRecorder(threading.Thread):
             self.format = pyaudio.paInt16  # Default to PCM_16
 
 
-       self.filename = filename
+        self.filename = filename
         self.p = pyaudio.PyAudio()
         self.stream = None
 
@@ -164,8 +164,7 @@ class VoiceRecorder(threading.Thread):
 # Example usage and testing
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="audio_recording.py", description="Voice recorder to WAV", add_help=True)
-
-    parser.add_argument("filename", help="filename (e.g. out.wav)")
+    parser.add_argument("-f", "--filename", type=str, default="out.wav", help="filename (e.g. out.wav)")
     parser.add_argument("-d", "--device", type=float, default=4, help="Device index for input")
     parser.add_argument("-r", "--samplerate", type=int, default=22050, help="Sample rate (default 22050)")
     parser.add_argument("-c", "--channels", type=int, default=1, help="Number of channels (1=mono, 2=stereo)")
