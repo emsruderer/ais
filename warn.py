@@ -10,7 +10,7 @@ from cpa_tracker import CPATrack
 from speech import speak, spell_callsign, str_number
 from nationality import get_country
 from shipstype import shiptype
-import ais_msg
+import register_msg
 
 HOST = 'localhost'
 PORT = 10110
@@ -162,7 +162,7 @@ def do_warn(que, my_ship=None):
         if isinstance(msg, CPATrack) :
             warning =  bericht
             if repeat_call(msg.mmsi, msg.tcpa):
-                    ais_msg.add_msg(warning)
+                    register_msg.add_msg(warning)
                     #speak(warning)
 
 if __name__ == '__main__':

@@ -98,14 +98,14 @@ def speak_gtts(txt: str, filename = FILENAME):
     playsound(filename)
 
 
-def speak(msg: str):
+def speak(msg: str, soundfile=FILENAME):
     """
     Docstring for speak
 
     :param msg: string to speak
     :type msg: str
     """
-    speak_gtts(msg )
+    speak_gtts(msg, soundfile )
 
 
 if __name__ == "__main__":

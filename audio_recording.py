@@ -2,6 +2,8 @@
 Audio Voice Recorder for Linux/Ubuntu
 Records microphone input to WAV files with real-time feedback
 """
+import argparse
+from html import parser
 import wave
 import threading
 import os
@@ -15,10 +17,9 @@ from pyaudio import paNoDevice
 class VoiceRecorder(threading.Thread):
     """Voice recorder using PyAudio for Linux/Ubuntu"""
 
-    def __init__(self, filename=None, sample_rate=44100, chunk_size=1024, device_index=4, channels = 1):
+    def __init__(self, filename='out.wav', sample_rate=22050, chunk_size=1024, device_index=4, channels = 1, format = 'PCM_16'):
         """
         Initialize the voice recorder
-
         Args:
             filename: Output WAV file path. If None, generates timestamped filename
             duration: Recording duration in seconds. If None, records until stop() is called
@@ -33,15 +34,18 @@ class VoiceRecorder(threading.Thread):
         self.is_recording = False
         self.audio_data = []
         self.device_index = device_index
-        self.format = pyaudio.paInt16
+
+        if format == 'PCM_16':
+            self.format = pyaudio.paInt16
+        elif format == 'PCM_24':
+            self.format = pyaudio.paInt24
+        elif format == 'FLOAT':
+            self.format = pyaudio.paFloat32
+        else:
+            self.format = pyaudio.paInt16  # Default to PCM_16
 
 
-        # Generate filename if not provided
-        if filename is None:
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename = f"recording_{timestamp}.wav"
-
-        self.filename = filename
+       self.filename = filename
         self.p = pyaudio.PyAudio()
         self.stream = None
 
@@ -159,9 +163,16 @@ class VoiceRecorder(threading.Thread):
 
 # Example usage and testing
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(prog="audio_recording.py", description="Voice recorder to WAV", add_help=True)
 
+    parser.add_argument("filename", help="filename (e.g. out.wav)")
+    parser.add_argument("-d", "--device", type=float, default=4, help="Device index for input")
+    parser.add_argument("-r", "--samplerate", type=int, default=22050, help="Sample rate (default 22050)")
+    parser.add_argument("-c", "--channels", type=int, default=1, help="Number of channels (1=mono, 2=stereo)")
+    parser.add_argument("-s", "--subtype", type=str, default="PCM_16", help="soundfile subtype, one of: PCM_16, PCM_24 orFLOAT")
+    args =      parser.parse_args()
     # Create recorder instance
-    recorder = VoiceRecorder(device_index=4)
+    recorder = VoiceRecorder(filename=args.filename, device_index=args.device, sample_rate=args.samplerate, channels=args.channels, format=args.subtype)
 
     # List available devices
     recorder.list_input_devices()
