@@ -124,7 +124,7 @@ def do_warn(que, my_ship=None):
                     bericht += "type schip: " + soort + ", "
             elif field.name == "destination":
                 bestemming = getattr(msg, field.name)
-                if bestemming is not None:
+                if bestemming:
                     bericht += "op weg naar  " + bestemming +  ", "
             elif field.name == "bearing":
                 bericht += ", in richting " + str_number(int(getattr(msg, field.name))) + ", "
