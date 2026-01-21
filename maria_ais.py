@@ -1,20 +1,21 @@
 # Module Imports
 import sys
-import pyais
-from pyais.stream import TCPConnection
-from pyais.tracker import AISTrackEvent
-from pyais.exceptions import UnknownMessageException
 import time as t
 import datetime
 from threading import Thread
-from pyais.filter import haversine
 import gc
+from pyais.tracker import AISTrackEvent
+import pyais
+from pyais.stream import TCPConnection
+from pyais.exceptions import UnknownMessageException
+from pyais.filter import haversine
 import mysql.connector
 from cpa_tcpa import cpa_tcpa
+from SQL_Statements import *
+
 #from speech import call_ship
 #from pyais import decode
 
-#flatpak run io.dbeaver.DBeaverCommunity
 
 host = 'localhost'
 port = 10110
@@ -32,8 +33,8 @@ print(haversine(jemgum,south_border))
 # Connect to MariaDB Platform
 try :
     conn = mysql.connector.connect(
-        user="user",
-        password="password
+        user="nanno",
+        password="11082004",
         host='localhost',
         port=3306,
         database="db_ais"
@@ -50,107 +51,40 @@ conn.autocommit = True
 print(conn.autocommit)
 # SQL Statements
 
-create_ships_table = """
-    CREATE TABLE IF NOT EXISTS Ships (
-        mmsi  INT(10) UNIQUE NOT NULL,
-        imo  CHAR(10),
-        callsign  CHAR(8),
-        name  VARCHAR(20),
-        type  TINYINT(3),
-        to_bow   SMALLINT(3),
-        to_stern   SMALLINT(3),
-        to_port    SMALLINT(3),
-        to_starboard   SMALLINT(3),
-        last_updated  TIMESTAMP(6),
-        ais_version  CHAR(4),
-        ais_type  CHAR(2),
-        status  VARCHAR(40),
-        PRIMARY KEY (mmsi)
-    );
-"""
 
-create_track_table = """
-    CREATE TABLE IF NOT EXISTS Tracks (
-        mmsi  INT(10),
-        speed  FLOAT(4,1),
-        lat  FLOAT(10,6),
-        lon  FLOAT(10,6),
-        course   FLOAT(4,1),
-        heading  FLOAT(4,1),
-        repeats  INT,
-        time  TIMESTAMP,
+tracker = pyais.AISTracker()
+latest_tracks = None
 
-        PRIMARY KEY (mmsi,lon,lat)
-    );
-"""
-
-create_cpa_table = """
-    CREATE TABLE IF NOT EXISTS Cpa (
-        mmsi  INT(10),
-        speed  FLOAT(4,1),
-        lat  FLOAT(10,6),
-        lon  FLOAT(10,6),
-        course   FLOAT(4,1),
-        heading  FLOAT(4,1),
-        cpa FLOAT(10,6),
-        tcpa FLOAT(10,6),
-        time  TIMESTAMP,
-
-        PRIMARY KEY (mmsi,lon,lat)
-    );
-"""
-
-add_cpa = ("""INSERT IGNORE INTO Cpa (mmsi,speed,lat,lon,course,heading,cpa,tcpa,last_updated) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) """)
-
-add_ship = ("""INSERT IGNORE INTO Ships (mmsi,imo,callsign,name,type,to_bow,to_stern,to_port,to_starboard, last_updated) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) """)
-
-add_ship_24 = ("""INSERT IGNORE INTO Ships (mmsi, name, last_updated) VALUES (%s,%s,%s) """)
-
-update_cpa = ("""UPDATE IGNORE INTO Cpa (mmsi,speed,lat,lon,course,heading,cpa,tcpa,last_updated) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) """)
-
-update_ship = ("UPDATE Ships " "SET imo=%s, callsign=%s, name=%s, type=%s, to_bow = %s, to_stern =%s, to_port =%s, to_starboard=%s,last_updated=%s WHERE mmsi = %s")
-
-update_ship_24 = ("UPDATE IGNORE Ships " "SET callsign=%s, type=%s, to_bow = %s, to_stern =%s, to_port =%s, to_starboard=%s WHERE mmsi = %s")
-
-add_waypoint = ("INSERT IGNORE INTO Tracks" "(mmsi,speed,lat,lon,course,heading,time)" "VALUES (%s,%s,%s,%s,%s,%s, %s);")
-
-report = ("SELECT Tracks.mmsi, Tracks.time, MAX(Tracks.speed), Tracks.lat, Tracks.lon, Tracks.course, Tracks.heading, Ships.name, Ships.callsign, Ships.type FROM Tracks LEFT JOIN Ships ON Tracks.mmsi = Ships.mmsi GROUP BY Tracks.mmsi ORDER BY Tracks.time ;")
-
-ship_data = ("SELECT Tracks.mmsi, Tracks.time, MAX(Tracks.speed), Tracks.lat, Tracks.lon, Tracks.course, Tracks.heading, Ships.name, Ships.callsign, Ships.type FROM Tracks LEFT JOIN Ships ON Tracks.mmsi = Ships.mmsi WHERE Tracks.mmsi = %s ;")
-
-romp_speed = ("SELECT SQRT(to_bow + to_stern)*2.42 as rump_speed FROM Ships WHERE mmsi = %s")
 
 #lt = datetime.datetime.fromtimestamp(t.time()).strftime('%Y-%m-%d %H:%M:%S')
-cur.execute(create_ships_table)
-cur.execute(create_track_table)
-cur.execute(create_cpa_table)
 
 def handle_create(decoded_msg):
+    """ called every time a new AISTrack is created """
     lt = datetime.datetime.fromtimestamp(t.time()).strftime('%Y-%m-%d %H:%M:%S')
     data_ship = (decoded_msg.mmsi, decoded_msg.imo, decoded_msg.callsign, decoded_msg.shipname,decoded_msg.ship_type, decoded_msg.to_bow, decoded_msg.to_stern, decoded_msg.to_port, decoded_msg.to_starboard,  lt)
     print(data_ship)
-    cur.execute(add_ship,data_ship)
+    cur.execute(ADD_SHIP,data_ship)
 
 
 def handle_update(track):
+    """ called every time an AISTrack is updated """
     lt = datetime.datetime.fromtimestamp(t.time()).strftime('%Y-%m-%d %H:%M:%S')
     # called every time an AISTrack is updated
     data_ship = (track.imo, track.callsign, track.shipname, track.ship_type, track.to_bow, track.to_stern, track.to_port, track.to_starboard, lt, track.mmsi)
     #print( data_ship)
     #print(track)
-    cur.execute(update_ship,data_ship)
+    cur.execute(UPDATE_SHIP,data_ship)
     if in_range(track.lat,track.lon) :
         data_ship = (track.mmsi, track.speed, track.lat, track.lon, track.course, track.heading, lt )
-        cur.execute(add_waypoint,data_ship)
+        cur.execute(ADD_WAYPOINT,data_ship)
 
 def handle_delete(track):
+    """ called every time an AISTrack is deleted (pruned) """
     # called every time an AISTrack is deleted (pruned)
     print('delete', track.mmsi)
 
-tracker = pyais.AISTracker()
-latest_tracks = None
-
 def in_range(lat,lon):
+    """ check if ship is within range of jemgum """
     if (lat and lon):
         distance = haversine((jemgum_lat,jemgum_lon), (lat,lon))
         return distance <= 25.5
@@ -158,6 +92,7 @@ def in_range(lat,lon):
         return False
 
 def romp_snelheid(mmsi):
+    """ calculate romp snelheid """
     cur = conn.cursor()
     cur.execute(romp_speed,mmsi)
     el = cur.fetchone()
@@ -166,6 +101,7 @@ def romp_snelheid(mmsi):
     return el
 
 def warning(mmsi):
+    """ create warning """
     cur = conn.cursor()
     cur.execute(ship_data,[mmsi])
     for ship in cur:
@@ -190,15 +126,17 @@ def warning(mmsi):
 
 
 
-"""
+
 with pyais.AISTracker() as tracker:
     tracker.register_callback(AISTrackEvent.CREATED, handle_create)
-
     tracker.register_callback(AISTrackEvent.UPDATED, handle_update)
     tracker.register_callback(AISTrackEvent.DELETED, handle_delete)
-"""
+
 
 def do_track():
+        """
+        Docstring for do_track
+        """
         _cpa_tcpa = dict()
         cur = conn.cursor()
         global latest_tracks
@@ -209,42 +147,44 @@ def do_track():
                     if in_range(decoded_msg.lat,decoded_msg.lon) and decoded_msg.speed > 0.5 and decoded_msg.speed < 102.3:
                         lt = datetime.datetime.fromtimestamp(t.time()).strftime('%Y-%m-%d %H:%M:%S')
                         data_ship = (decoded_msg.mmsi, decoded_msg.speed, decoded_msg.lat, decoded_msg.lon, decoded_msg.course, decoded_msg.heading, lt )
-                        cur.execute(add_waypoint,data_ship)
+                        cur.execute(ADD_WAYPOINT,data_ship)
                         conn.commit()
-                        _cpa_tcpa[decoded_msg.mmsi]= cpa_tcpa(decoded_msg.speed, decoded_msg.lat, decoded_msg.lon, decoded_msg.course, 244030153, 0, jemgum_lat,jemgum_lon, 180)
+                        _cpa_tcpa[decoded_msg.mmsi]= cpa_tcpa(decoded_msg.speed, decoded_msg.lat, decoded_msg.lon, decoded_msg.course, 244030153, 0, jemgum_lat,jemgum_lon, 180, 0)
                 elif (decoded_msg.msg_type == 5) :
                     lt = datetime.datetime.fromtimestamp(t.time()).strftime('%Y-%m-%d %H:%M:%S')
                     data_ship = (decoded_msg.mmsi, decoded_msg.imo, decoded_msg.callsign, decoded_msg.shipname,decoded_msg.ship_type, decoded_msg.to_bow, decoded_msg.to_stern, decoded_msg.to_port, decoded_msg.to_starboard,  lt)
-                    cur.execute(add_ship,data_ship)
+                    cur.execute(ADD_SHIP,data_ship)
                     conn.commit()
                 elif (decoded_msg.msg_type == 24) :
                     lt = datetime.datetime.fromtimestamp(t.time()).strftime('%Y-%m-%d %H:%M:%S')
                     if (decoded_msg.partno == 0):
                         data_ship = (decoded_msg.mmsi, decoded_msg.shipname, lt)
-                        cur.execute(add_ship_24,data_ship)
+                        cur.execute(ADD_SHIP_24,data_ship)
                         conn.commit()
                     elif (decoded_msg.partno == 1):
                         data_ship = (decoded_msg.callsign, decoded_msg.ship_type, decoded_msg.to_bow, decoded_msg.to_stern, decoded_msg.to_port, decoded_msg.to_starboard, decoded_msg.mmsi)
-                        cur.execute(update_ship_24,data_ship)
+                        cur.execute(UPDATE_SHIP_24,data_ship)
                         conn.commit()
-                #tracker.update(msg)
+                tracker.update(decoded_msg)
                 #latest_tracks = tracker.n_latest_tracks(10)
-            except UnknownMessageException as e:
-                print(e)
+            except UnknownMessageException as ex:
+                print(ex)
 
 
 t1 = Thread(target=do_track,)
 t1.start()
 
 def ship_type(n):
+    """ return ship type """
     return str(n)+" unavailable"
 
 def show():
+    """ show report every minute """
     #gc.set_debug(gc.DEBUG_LEAK)
     while True:
-        #t.sleep(60)
+        t.sleep(60)
         cur = conn.cursor()
-        cur.execute(report)
+        cur.execute(REPORT)
         print("_________________________________________________________________________________________________________________________")
         print("mmsi            time            speed  lat      lon    course heading name                   callsign type")
         print("_________________________________________________________________________________________________________________________")
@@ -266,8 +206,8 @@ def show():
                 print(s)
                 #if  speed > 11:
                 #    call_ship(mmsi,name,callsign)
-            except Exception as e:
-                print(e)
+            except Exception as ex:
+                print(ex)
         t.sleep(10)
         cur.close()
         print("_________________________________________________________________________________________________________________________")
@@ -276,10 +216,9 @@ def show():
 
 
 t2 = Thread(target= show)
-#t2.start()
-
+t2.start()
 t1.join()
-
+t2.join()
 cur.close()
 conn.close()
 print(gc.garbage)
