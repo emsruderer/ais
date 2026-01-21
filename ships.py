@@ -3,13 +3,13 @@ Ship class for virtual ships simulationS
 """
 
 import time
-from math import sin,cos,pi
+from math import sin,cos, radians, degrees
 import threading
 from socket import socket, AF_INET, SOCK_STREAM
 
 class Ship(threading.Thread):
     """Virtual sailing ship"""
-    def __init__(self, mmsi, lat, lon, course,speed, host='localhost', port=10110 ):
+    def __init__(self, mmsi, lat, lon, course, speed, host='localhost', port=10110 ):
         threading.Thread.__init__(self)
         self.mmsi = mmsi
         self.host = host
@@ -17,11 +17,11 @@ class Ship(threading.Thread):
         self.lat = lat
         self.lon = lon
         self.y = lat*60
-        self.x = lon*60 * cos(lat*pi/180)  # nautical miles OL
-        self.course = course*pi/180 # course in rad
+        self.x = lon*60 * cos(radians(lat))  # nautical miles OL
+        self.cog = radians(course) # rad
         self.heading = course # heading in degrees
-        self.speed = speed # knots
-        self.minute = 1 #60
+        self.sog = speed # knots
+        self.minute = 60 #60
         self.deadreckoning = True
         self.navigation = {}
         self.utc_time = None
@@ -37,6 +37,7 @@ class Ship(threading.Thread):
 
     def get_navigation(self):
         """atribute getter"""
+        self.navigation = {'lat': self.lat, 'lon' : self.lon, 'cog': self.get_cog(), 'sog': self.sog}
         return self.navigation
 
     def _get_latitude(self):
@@ -47,17 +48,17 @@ class Ship(threading.Thread):
         """atribute getter"""
         return self.x # nautical miles OL
 
-    def get_course(self):
+    def get_cog(self):
         """atribute getter"""
-        return self.course * 180/ pi # in degrees
+        return degrees(self.cog) # in degrees
 
-    def set_course(self,course):
+    def set_cog(self,course):
         """atribute setter"""
-        self.course = course*pi/180
+        self.cog = radians(course)
 
-    def get_speed(self):
+    def get_sog(self):
         """atribute getter"""
-        return self.speed
+        return self.cog
 
     def run(self):
         """thread runner"""
@@ -66,9 +67,8 @@ class Ship(threading.Thread):
         try:
             for gps in self.gps_from_signalk(host ='localhost', port=10110):
                 self.navigation = gps
-                #print(self.get_navigation())
-
-        except RuntimeError as e:
+                print(self.get_navigation())
+        except Exception as e:
             print(f'GPS stream error: {e}')
             print('Switching to dead reckoning mode')
 
@@ -76,9 +76,13 @@ class Ship(threading.Thread):
         while True:
             print(self.get_navigation())
             time.sleep(self.minute) # wait a minute
-            t = 1 # time interval 1  minute
-            self.x += self.speed/60 * sin(self.course) * t
-            self.y += self.speed/60 * cos(self.course) * t
+            t = self.minute / 60 # time interval 1  minute
+            dx = self.sog/60 * sin(self.cog) * t
+            dy = self.sog/60 * cos(self.cog) * t
+            self.x += dx
+            self.y += dy
+            self.lon += dx/60
+            self.lat += dy/60
 
     def stop(self):
         """stop thread"""
@@ -86,7 +90,7 @@ class Ship(threading.Thread):
 
     def get_position(self):
         """atribute getter"""
-        return(self.y, self.x)
+        return (self.lat, self.lon)
 
     def get_latitude(self):
         """atribute getter"""
@@ -114,31 +118,31 @@ class Ship(threading.Thread):
         self.status = fields[6]
 
         return {
-            'latitude': lat,
-            'longitude': lon,
+            'latitude': self.lat,
+            'longitude': self.lon,
             'time_utc': self.utc_time,
             'status': self.status
         }
 
-    def decode_vts(self, gpvtg:str) -> dict:
+    def decode_vtg(self, gpvtg:str) -> dict:
         """Decode VTG NMEA sentence into a dictionary."""
         fields = gpvtg.split(',')
         if len(fields) < 9:
             raise ValueError("Invalid VTG sentence")
         if fields[1] == '':
-            self.course = None
-            self.heading = None
-            self.speed   = None
+            course = None
+            heading = None
+            speed   = None
             speed_kmh = None
         else:
-            self.course = float(fields[1])
+            self.cog = float(fields[1])
             self.heading = float(fields[3])
-            self.speed = float(fields[5])
+            self.sog = float(fields[5])
             speed_kmh = float(fields[7])
         return {
-            'true_track': self.course,
+            'cog': self.cog,
             'magnetic_track': self.heading,
-            'speed_knots': self.speed,
+            'sog': self.sog,
             'speed_kmh': speed_kmh
         }
 
@@ -177,69 +181,76 @@ class Ship(threading.Thread):
         lat = float(fields[3][:2]) + float(fields[3][2:]) / 60.0
         if fields[4] == 'S':
             lat = -lat
-
+        self.lat = lat
         lon = float(fields[5][:3]) + float(fields[5][3:]) / 60.0
         if fields[6] == 'W':
             lon = -lon
+        self.lon = lon
 
         speed_over_ground = float(fields[7])
         if speed_over_ground == '':
                 speed_over_ground = None
         else:
-            speed_over_ground = float(fields[7])
+            self.sog = float(fields[7])
         if fields[8] == '':
             course_over_ground = None
         else:
-            course_over_ground = float(fields[8])
+            self.cog = radians(float(fields[8]))
         date = fields[9]
 
         return {
             'time_utc': time_utc,
             'status': status,
-            'latitude': lat,
-            'longitude': lon,
-            'speed_over_ground': speed_over_ground,
-            'course_over_ground': course_over_ground,
+            'latitude': self.lat,
+            'longitude': self.lon,
+            'sog': self.sog,
+            'cog': self.cog,
             'date': date
         }
 
     def gps_from_signalk(self, host ='localhost', port=10110):
         """Generator that yields GPS data from a SignalK server."""
+        fail_counter = 0
         with socket(AF_INET, SOCK_STREAM) as s:
+            s.settimeout(3)
             s.connect((host, port))
             buffer = ""
             print('socket opened')
             while True:
                 try:
-                    data = s.recv(4096).decode('utf-8')
+                    data = s.recv(4096,).decode('utf-8')
                     if not data:
+                        fail_counter += 1
+                        if fail_counter > 5:
+                            raise RuntimeWarning('No data from GPS')
                         break
                     buffer += data
                     while '\n' in buffer:
                         line, buffer = buffer.split('\n', 1)
-
                         if line.startswith("$GRMC"):
                             self.navigation = self.decode_rmc(line)
-                            yield #self.navigation
+                            yield(self.navigation)
                         elif line.startswith("$GPGLL"):
                             self.navigation = self.decode_gll(line)
-                            yield #self.navigation
+                            yield(self.navigation)
                         elif line.startswith("$GPVTG"):
                             self.navigation = self.decode_vts(line)
-                            yield #self.navigation
+                            yield(self.navigation)
                         elif line.startswith("$GPZDA"):
                             self.navigation = self.decode_zda(line)
-                            yield #self.navigation
+                            yield (self.navigation)
                         elif line.startswith("$GPHDT"):
                             self.navigation = self.decode_hdt(line)
-                            yield #self.navigation
+                            yield (self.navigation)
                 except Exception as ex:
                     print(ex,line)
-
+                    if RuntimeWarning:
+                        raise RuntimeWarning from RuntimeWarning
+                    
 if __name__ == '__main__':
     my_ship = Ship(244030153, 53.26379, 7.39738, 180, 1.0, '127.0.0.1', 10110)
     my_ship.start()
-    print(my_ship.get_course(), my_ship.get_speed())
+    print(my_ship.get_cog(), my_ship.get_sog())
     while True:
         print(f'Lattitude: {my_ship.get_latitude():.3f}, longitude: {my_ship.get_longitude():.3f}')
         print(my_ship.get_navigation())
