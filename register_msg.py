@@ -5,7 +5,7 @@ from datetime import datetime
 from speech import speak
 
 TRAINING_DATA_DIR = 'training_data'
-SIMPLE_TEXT = True # No special words/characters in text
+SIMPLE_TEXT = False # No special words/characters in text
 
 message_number = 0 # global message number
 
@@ -42,7 +42,7 @@ def add_msg(msg):
     if SIMPLE_TEXT:
         out = soundfile + '|' + msg  + '\n'
     else:
-        out = soundfile + '|' + msg + '|' + msg + '|' +timestamp + '\n' # original and normalized text, TO DO: timestamp should be duration
+        out = soundfile + '|' + msg + '|' + msg + '\n' # original and normalized text, TO DO: timestamp should be duration
     soundfile = soundfile + '.wav'
 
     with open(TRAINING_DATA_DIR + sep + FN, mode = 'a', encoding = "utf-8") as f:
