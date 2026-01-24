@@ -234,7 +234,7 @@ class Ship(threading.Thread):
                             self.navigation = self.decode_gll(line)
                             yield(self.navigation)
                         elif line.startswith("$GPVTG"):
-                            self.navigation = self.decode_vts(line)
+                            self.navigation = self.decode_vtg(line)
                             yield(self.navigation)
                         elif line.startswith("$GPZDA"):
                             self.navigation = self.decode_zda(line)
@@ -246,7 +246,7 @@ class Ship(threading.Thread):
                     print(ex,line)
                     if RuntimeWarning:
                         raise RuntimeWarning from RuntimeWarning
-                    
+
 if __name__ == '__main__':
     my_ship = Ship(244030153, 53.26379, 7.39738, 180, 1.0, '127.0.0.1', 10110)
     my_ship.start()

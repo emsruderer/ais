@@ -88,7 +88,7 @@ def do_track(que, known_ship = None):
                     #print_cpa(decoded.mmsi, cpa_res)
                     tracker.update(decoded, cpa_res)
                     if danger(cpa_res):
-                        que.put( tracker.get_track(decoded.mmsi)   )
+                        que.put( tracker.get_track(decoded.mmsi))
                         print("Dangerous CPA detected for MMSI ", decoded.mmsi)
                 elif decoded.msg_type in [5,18,19,24]:
                     tracker.update(decoded, cpa_res)
@@ -107,7 +107,7 @@ if __name__ == '__main__':
     warn_que = Queue(MAX_MESSAGES)
     p1 = Process(target=do_track, args=(warn_que,my_ship,))
     p1.start()
-    p3 = Process(target=do_warn, args=(warn_que, my_ship,))
+    p3 = Process(target=do_warn, args=(warn_que,))
     p3.start()
     p1.join()
     p3.join()
