@@ -24,7 +24,7 @@ spell_alphabet = {'A' : 'Alpha', 'B' :'Bravo', 'C': 'Charlie', 'D' : 'Delta', 'E
                   'N' : 'November', 'O': 'Oskar', 'P':'Papa',\
                   'Q': 'Quebec', 'R':'Romeo','S':'Sierra','T':'Tango','U':'Uniform',\
                   'V':'Victor','W':'Whiskey','X':'X-ray',\
-                  'Y':'Yanke','Z':'Zoulou','0':'null','1':'éen','2':'twee','3':'drie','4':'vier',\
+                  'Y':'Yanke','Z':'Zoulou','0':'null','1':'één','2':'twee','3':'drie','4':'vier',\
                   '5':'vijf','6':'zes','7':'zeven','8':'acht','9':'negen'}
 
 nl_number = [ "nul", " één", "twee", "drie","vier", "vijf", "zes", "zeven",\
@@ -39,7 +39,7 @@ nl_hoderdtallen = ["honderd", "tweehonderd",]
 
 
 
-def str_number(number):
+def str_getal(number):
     """ convert number to spoken dutch text """
     number = abs(int(number)) # ensure positive integer
     if number == 0:
@@ -52,17 +52,27 @@ def str_number(number):
         return  nl_number[number%10] + "en" +nl_tientallen[number//10]
     if number < 3000:
         if number // 100 < 2:
-            return "honderd" + str_number(number%100)
+            return "honderd" + str_getal(number%100)
         if number // 100 == 10:
-            return "duizend " + str_number(number%1000)
-        return str_number(number//100) + "honderd" +str_number(number%100)
+            return "duizend " + str_getal(number%1000)
+        return str_getal(number//100) + "honderd" +str_getal(number%100)
     if number < 10000:
-        return nl_number[number//1000] + "duizend" + str_number(number%1000)
+        return nl_number[number//1000] + "duizend" + str_getal(number%1000)
     if number < 1000000:
-        return str_number(number//1000) + "duizend " + str_number(number%1000)
+        return str_getal(number//1000) + "duizend " + str_getal(number%1000)
     if number < 1000000000:
-        return str_number(number//1000000) + " miljoen " + str_number(number%1000000)
+        return str_getal(number//1000000) + " miljoen " + str_getal(number%1000000)
     return "weet ik niet"
+
+def str_number(number:float):
+    """ convert number to spoken dutch text """
+    if number < 0:
+        return "min " + str_getal(-number)
+    if number < 1.0:
+        return "nul komma " + str_getal(int(number*10))
+    return str_getal(int(number))
+
+
 
 def spell_callsign(callsign: str):
     """ convert callsign to spoken text """
@@ -70,7 +80,7 @@ def spell_callsign(callsign: str):
     for ch in callsign:
         #if ch in ['0','1','2'.'3','4','5'.'6','7','8','9']:
         cs += spell_alphabet[ch] + ' '
-    return cs+', '
+    return cs
 
 
 def say_number(number : int):
@@ -112,6 +122,8 @@ if __name__ == "__main__":
     for k, v in spell_alphabet.items():
         print(k,v)
     print(spell_callsign('PC1234'))
+    speak(str_number(0.5))
+    speak(str_number(-3))
     speak("Een Nederlandse tekst")
     speak("AIS spraak bericht systeem gestart")
     speak("Schip naam " + 'mijn boot')

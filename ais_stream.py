@@ -79,7 +79,7 @@ def do_track(que, known_ship = None):
                 if decoded.msg_type in [1,2,3,18]:
                     cpa_res = cpa_tcpa( known_ship.get_mmsi(),known_ship.get_latitude(),
                                         known_ship.get_longitude(),
-                                        known_ship.get_course(), known_ship.get_speed(),
+                                        known_ship.get_cog(), known_ship.get_sog(),
                                         decoded.mmsi,
                                         decoded.lat,
                                         decoded.lon,

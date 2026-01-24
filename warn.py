@@ -10,6 +10,7 @@ from cpa_tracker import CPATrack
 from speech import speak, spell_callsign, str_number
 from nationality import get_country
 from shipstype import shiptype
+
 import register_msg
 
 HOST = 'localhost'
@@ -24,8 +25,8 @@ FIELDS = dataclasses.fields(CPATrack)
 wait_dict = {}
 
 def next_call(tcpa):
-   """Calculate the next call time based on tcpa"""
-   return time.time() + (tcpa * 60)/2
+    """Calculate the next call time based on tcpa"""
+    return time.time() + (tcpa * 60)/2
 
 def nationaliteit(mmsi):
     """
@@ -83,7 +84,7 @@ def min_to_hr(minutes):
         return minutes / 60, True
     return minutes, False
 
-def do_warn(que, my_ship=None):
+def do_warn(que):
     """ do warning based on ais tracks """
     while True:
         msg = que.get()
@@ -95,7 +96,6 @@ def do_warn(que, my_ship=None):
                 print(f"Value: {getattr(msg, field.name)}")
                 print(f"Default: {field.default}")
                 print("-" * 20)
-
             if field.name == "mmsi":
                 mmsi = getattr(msg, field.name)
                 #bericht += "MMSI " + str_number(mmsi) + " "
@@ -103,31 +103,31 @@ def do_warn(que, my_ship=None):
             elif field.name == "shipname":
                 shipname = getattr(msg, field.name)
                 if shipname is not None:
-                    bericht += ", scheepsnaam " + shipname.lower() + ", "
+                    bericht += ", scheepsnaam " + shipname.lower()
             elif field.name == "callsign":
                 callsign = getattr(msg, field.name)
                 if callsign is not None:
-                    bericht += " met roepnaam " + spell_callsign(callsign) + " "
+                    bericht += " met roepnaam " + spell_callsign(callsign)
             elif field.name == "course":
                 course = getattr(msg, field.name)
-                bericht += "op koers " + str_number(int(course)) + " graden "
+                bericht += ", op koers " + str_number(int(course)) + " graden"
             elif field.name == "speed":
-                bericht += "met " + str_number(int(getattr(msg, field.name))) + " knopen "
+                bericht += "met " + str_number(int(getattr(msg, field.name))) + " knopen"
             elif field.name == "heading":
                 heading = getattr(msg, field.name)
                 if heading != 511 and (heading >= course + 10 or heading <= course - 10):
-                    bericht += "met heading " + str_number(int(heading)) + " graden, "
+                    bericht += ", met heading " + str_number(int(heading)) + " graden, "
             elif field.name == "ship_type":
                 t = getattr(msg, field.name)
-                if t is not None:
+                if t :
                     soort = shiptype(t)
-                    bericht += "type schip: " + soort + ", "
+                    bericht += ", type schip: " + soort.lower
             elif field.name == "destination":
                 bestemming = getattr(msg, field.name)
-                if bestemming:
-                    bericht += "op weg naar  " + bestemming +  ", "
+                if bestemming and len(bestemming) > 0:
+                    bericht += ", op weg naar  " + str.lower(bestemming)
             elif field.name == "bearing":
-                bericht += ", in richting " + str_number(int(getattr(msg, field.name))) + ", "
+                bericht += ", in richting " + str_number(int(getattr(msg, field.name)))
             elif field.name == "last_updated":
                 print("Last updated:", getattr(msg, field.name))
             elif field.name == "status":
@@ -150,20 +150,20 @@ def do_warn(que, my_ship=None):
                     maat = " meter"
                 else:
                     maat = " mijl"
-                bericht += " kleinste afstand " + str_number(int(cpa)) + maat
+                bericht += ", kleinste afstand " + str_number(int(cpa)) + maat
             elif field.name == "tcpa":
                 tcpa = getattr(msg, field.name)
                 tcpa, waar = min_to_hr(tcpa)
                 if waar:
-                    maat = " uur, "
+                    maat = " uur"
                 else:
-                    maat = " minuten, "
-                bericht += " over " + str_number(int(tcpa)) + maat
+                    maat = " minuten"
+                bericht += ", over " + str_number(int(tcpa)) + maat
         if isinstance(msg, CPATrack) :
             warning =  bericht
             if repeat_call(msg.mmsi, msg.tcpa):
-                    register_msg.add_msg(warning)
-                    #speak(warning)
+                register_msg.add_msg(warning)
+                speak(warning)
 
 if __name__ == '__main__':
     print("min_to_hr(100) =", min_to_hr(100) )
@@ -172,8 +172,8 @@ if __name__ == '__main__':
     print("nm_to_meters(-0.5) =", nm_to_meters(-0.5) )
     print("nm_to_meters(-1.5) =", nm_to_meters(-1.5) )
     print("nm_to_meters(1.5) =", nm_to_meters(1.5) )
-    print("bearing(53.26379,7.39738,53.26300,7.40000) =", bearing(53.26379,7.39738,53.26300,7.40000) )
-    print("distance(53.26379,7.39738,53.26300,7.40000) =", distance(53.26379,7.39738,53.26300,7.40000) )
+    print("bearing(53.26379,7.39738,53.26300,7.40000) =", bearing(53.26379,7.39738,53.2630,7.400))
+    print("distance(53.26379,7.39738,53.26300,7.40000) =", distance(53.26379,7.39738,53.2630,7.400))
     print("next_call(10) =", next_call(10) )
     print("next_call(20) =", next_call(20) )
     print("next_call(30) =", next_call(30) )

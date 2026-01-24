@@ -78,25 +78,25 @@ ADD_SHIP_TYPE = """ INSERT IGNORE INTO Shipstypes (ind,soort) VALUES (%s,%s); ""
 
 ADD_WARNING = """INSERT IGNORE INTO Warnings (mmsi,callsign,name,type,speed,lat,lon,course,repeats,time) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s); """
 
-ADD_CPA = ("""INSERT IGNORE INTO Cpa (mmsi,speed,lat,lon,course,heading,cpa,tcpa,last_updated) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) """)
+ADD_CPA = """INSERT IGNORE INTO Cpa (mmsi,speed,lat,lon,course,heading,cpa,tcpa,last_updated) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) """
 
-ADD_SHIP = ("""INSERT IGNORE INTO Ships (mmsi,imo,callsign,name,type,to_bow,to_stern,to_port,to_starboard, last_updated) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) """)
+ADD_SHIP = """INSERT IGNORE INTO Ships (mmsi,imo,callsign,name,type,to_bow,to_stern,to_port,to_starboard, last_updated) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) """
 
-ADD_SHIP_24 = ("""INSERT IGNORE INTO Ships (mmsi, name, last_updated) VALUES (%s,%s,%s) """)
+ADD_SHIP_24 =  """INSERT IGNORE INTO Ships (mmsi, name, last_updated) VALUES (%s,%s,%s) """
 
-UPDATE_CPA = ("""UPDATE IGNORE INTO Cpa (mmsi,speed,lat,lon,course,heading,cpa,tcpa,last_updated) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) """)
+UPDATE_CPA = """UPDATE IGNORE INTO Cpa (mmsi,speed,lat,lon,course,heading,cpa,tcpa,last_updated) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) """
 
-UPDATE_SHIP = ("UPDATE Ships " "SET imo=%s, callsign=%s, name=%s, type=%s, to_bow = %s, to_stern =%s, to_port =%s, to_starboard=%s,last_updated=%s WHERE mmsi = %s")
+UPDATE_SHIP =  """"UPDATE IGNORE INTO Ships" "SET imo=%s, callsign=%s, name=%s, type=%s, to_bow = %s, to_stern =%s, to_port =%s, to_starboard=%s, last_updated=%s WHERE mmsi = %s"""
 
-UPDATE_SHIP_24 = ("UPDATE IGNORE Ships " "SET callsign=%s, type=%s, to_bow = %s, to_stern =%s, to_port =%s, to_starboard=%s WHERE mmsi = %s")
+UPDATE_SHIP_24 = """UPDATE IGNORE INTO Ships" "SET callsign=%s, type=%s, to_bow = %s, to_stern =%s, to_port =%s, to_starboard=%s WHERE mmsi = %s"""
 
-ADD_WAYPOINT = ("INSERT IGNORE INTO Tracks" "(mmsi,speed,lat,lon,course,heading,time)" "VALUES (%s,%s,%s,%s,%s,%s, %s);")
+ADD_WAYPOINT = """INSERT IGNORE INTO Tracks (mmsi,speed,lat,lon,course,heading,time) VALUES (%s,%s,%s,%s,%s,%s, %s);"""
 
-REPORT = ("SELECT Tracks.mmsi, Tracks.time, MAX(Tracks.speed), Tracks.lat, Tracks.lon, Tracks.course, Tracks.heading, Ships.name, Ships.callsign, Ships.type FROM Tracks LEFT JOIN Ships ON Tracks.mmsi = Ships.mmsi GROUP BY Tracks.mmsi ORDER BY Tracks.time ;")
+REPORT = """SELECT Tracks.mmsi, Tracks.time, MAX(Tracks.speed), Tracks.lat, Tracks.lon, Tracks.course, Tracks.heading, Ships.name, Ships.callsign, Ships.type FROM Tracks LEFT JOIN Ships ON Tracks.mmsi = Ships.mmsi GROUP BY Tracks.mmsi ORDER BY Tracks.time ;"""
 
-SHIP_DATA = ("SELECT Tracks.mmsi, Tracks.time, MAX(Tracks.speed), Tracks.lat, Tracks.lon, Tracks.course, Tracks.heading, Ships.name, Ships.callsign, Ships.type FROM Tracks LEFT JOIN Ships ON Tracks.mmsi = Ships.mmsi WHERE Tracks.mmsi = %s ;")
+SHIP_DATA = """SELECT Tracks.mmsi, Tracks.time, MAX(Tracks.speed), Tracks.lat, Tracks.lon, Tracks.course, Tracks.heading, Ships.name, Ships.callsign, Ships.type FROM Tracks LEFT JOIN Ships ON Tracks.mmsi = Ships.mmsi WHERE Tracks.mmsi = %s ;"""
 
-ROMP_SPEED = ("SELECT SQRT(to_bow + to_stern)*2.42 as rump_speed FROM Ships WHERE mmsi = %s")
+ROMP_SPEED = """SELECT SQRT(to_bow + to_stern)*2.42 as rump_speed FROM Ships WHERE mmsi = %s"""
 
 def read_textfile():
     """ read shiptype.txt and create dict """
