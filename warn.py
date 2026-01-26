@@ -3,8 +3,8 @@ Talking AIS watcher
 """
 import time
 import dataclasses
+from logging import getLogger
 import math
-from re import VERBOSE
 from pyais.filter import haversine
 from cpa_tracker import CPATrack
 from speech import speak, spell_callsign, str_number
@@ -20,6 +20,9 @@ VERBOSE = False
 
 JEMGUM_LAT = 53.26379
 JEMGUM_LON = 7.39738
+
+log = getLogger(__name__)
+log.setLevel("INFO")
 
 FIELDS = dataclasses.fields(CPATrack)
 wait_dict = {}
@@ -103,7 +106,7 @@ def do_warn(que):
             elif field.name == "shipname":
                 shipname = getattr(msg, field.name)
                 if shipname is not None:
-                    bericht += ", scheepsnaam " + shipname.lower()
+                    bericht += ", scheepsnaam " + shipname
             elif field.name == "callsign":
                 callsign = getattr(msg, field.name)
                 if callsign is not None:
@@ -121,13 +124,13 @@ def do_warn(que):
                 t = getattr(msg, field.name)
                 if t :
                     soort = shiptype(t)
-                    bericht += ", type schip: " + soort.lower
+                    bericht += ", type schip: " + str.lower(soort)
             elif field.name == "destination":
                 bestemming = getattr(msg, field.name)
                 if bestemming and len(bestemming) > 0:
                     bericht += ", op weg naar  " + str.lower(bestemming)
             elif field.name == "bearing":
-                bericht += ", in richting " + str_number(int(getattr(msg, field.name)))
+                bericht += ", met peiling " + str_number(int(getattr(msg, field.name)))
             elif field.name == "last_updated":
                 print("Last updated:", getattr(msg, field.name))
             elif field.name == "status":
@@ -140,9 +143,7 @@ def do_warn(que):
                     maat = " meter"
                 else:
                     maat = " mijl"
-                bericht += ", nu op " + str_number(int(afstand)) + maat + " van ons vandaan"
-            elif field.name == "bearing":
-                bericht += ", peiling " + str_number(int(getattr(msg, field.name))) + ", "
+                bericht += ", nu op " + str_number(int(afstand)) + maat
             elif field.name == "cpa":
                 cpa = getattr(msg, field.name)
                 cpa, waar = nm_to_meters(cpa)
@@ -160,8 +161,10 @@ def do_warn(que):
                     maat = " minuten"
                 bericht += ", over " + str_number(int(tcpa)) + maat
         if isinstance(msg, CPATrack) :
+            log.info("Bericht generated: %s", bericht)
             warning =  bericht
             if repeat_call(msg.mmsi, msg.tcpa):
+                log.info("Issuing warning: %s", warning )
                 register_msg.add_msg(warning)
                 speak(warning)
 

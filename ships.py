@@ -6,6 +6,9 @@ import time
 from math import sin,cos, radians, degrees
 import threading
 from socket import socket, AF_INET, SOCK_STREAM
+from logging import getLogger
+
+log = getLogger(__name__)
 
 class Ship(threading.Thread):
     """Virtual sailing ship"""
@@ -58,7 +61,7 @@ class Ship(threading.Thread):
 
     def get_sog(self):
         """atribute getter"""
-        return self.cog
+        return self.sog
 
     def run(self):
         """thread runner"""
@@ -67,14 +70,14 @@ class Ship(threading.Thread):
         try:
             for gps in self.gps_from_signalk(host ='localhost', port=10110):
                 self.navigation = gps
-                print(self.get_navigation())
+                log.info(self.get_navigation())
         except Exception as e:
-            print(f'GPS stream error: {e}')
-            print('Switching to dead reckoning mode')
+            log.error('GPS stream error %s', e )
+            log.info('Switching to dead reckoning mode')
 
         self.deadreckoning = True
         while True:
-            print(self.get_navigation())
+            log.info(self.get_navigation())
             time.sleep(self.minute) # wait a minute
             t = self.minute / 60 # time interval 1  minute
             dx = self.sog/60 * sin(self.cog) * t
@@ -242,10 +245,9 @@ class Ship(threading.Thread):
                         elif line.startswith("$GPHDT"):
                             self.navigation = self.decode_hdt(line)
                             yield (self.navigation)
-                except Exception as ex:
-                    print(ex,line)
-                    if RuntimeWarning:
-                        raise RuntimeWarning from RuntimeWarning
+                except RuntimeWarning as ex:
+                    log.info(ex,line)
+                    raise RuntimeWarning from RuntimeWarning
 
 if __name__ == '__main__':
     my_ship = Ship(244030153, 53.26379, 7.39738, 180, 1.0, '127.0.0.1', 10110)

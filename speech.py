@@ -38,7 +38,6 @@ nl_tientallen = ["","tien","twintig","dertig","veertig", "vijftig","zestig",\
 nl_hoderdtallen = ["honderd", "tweehonderd",]
 
 
-
 def str_getal(number):
     """ convert number to spoken dutch text """
     number = abs(int(number)) # ensure positive integer
@@ -73,7 +72,6 @@ def str_number(number:float):
     return str_getal(int(number))
 
 
-
 def spell_callsign(callsign: str):
     """ convert callsign to spoken text """
     cs = ' '
@@ -90,14 +88,15 @@ def say_number(number : int):
     playsound("call.mp2")
 
 # TTS to a file, use a preset speaker
-def speak_tts(txt: str):
+def speak_tts(txt: str, filename = FILENAME):
     """ convert text to spoken dutch text """
     tts.tts_to_file(
         text= txt, #speaker = 'Craig Gutsy', language = 'nl',
-        file_path='call.wav'
+        file_path=filename
         )
-    playsound("call.wav")
+    playsound( filename)
 
+# GTTs to a file
 def speak_gtts(txt: str, filename = FILENAME):
     """
     speak
@@ -107,11 +106,10 @@ def speak_gtts(txt: str, filename = FILENAME):
     gtts.save(filename)
     playsound(filename)
 
-
+# Main speak switcher function
 def speak(msg: str, soundfile=FILENAME):
     """
-    Docstring for speak
-
+    selection function for speech module
     :param msg: string to speak
     :type msg: str
     """

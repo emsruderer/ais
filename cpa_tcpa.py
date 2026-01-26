@@ -67,7 +67,7 @@ def cpa_tcpa(mmsi1, lat1, lon1, cog1, sog1,  mmsi2, lat2, lon2, cog2, sog2):
             cpa = sqrt( (d_lon - dvx*tcpa)**2 + (d_lat - dvy*tcpa)**2 )
             #print(distance)
 
-        bear = atan2(d_lat,d_lon) if d_lon  != 0 else 0
+        bear = atan2(d_lon,d_lat) if d_lon  != 0 else 0
         bearing = degrees(bear) % 360
 
         return { "cpa": cpa, "tcpa" : tcpa, "mmsi" : mmsi2, "distance": distance, "bearing": bearing, "approaching_speed": dv }

@@ -2,6 +2,7 @@
 import sys
 
 from multiprocessing import Queue, Process
+import logging
 from pyais.stream import TCPConnection
 from pyais.filter import FilterChain,MessageTypeFilter,NoneFilter
 from pyais.tracker import AISTrackEvent
@@ -18,6 +19,8 @@ MAX_MESSAGES = 100
 MINIMUM_CPA = 1 # nautical miles
 MINIMUM_TCPA = 30  # minutes
 MINIMUM_DISTANCE = 5 # nautical miles
+
+log = logging.getLogger(__name__)
 
 """Define the filter chain with various criteria """
 chain = FilterChain([
@@ -54,17 +57,16 @@ def danger(cpa, minimum_cpa=MINIMUM_CPA,minimum_tcpa=MINIMUM_TCPA, minimum_dista
 
 def handle_create(track):
     """called every time an CPATrack is created"""
-    #print('created:', track)
+    log.debug('created: %s', track)
 
 
 def handle_update(track):
     """called every time an CPATrack is updated"""
-    #print('updated',track)
-
+    log.debug('updated: %s', track)
 
 def handle_delete(track):
     """called every time an CPATrack is deleted (pruned)"""
-    #print('deleted',track)
+    log.debug   ('deleted: %s', track)
 
 def do_track(que, known_ship = None):
     """tracking function"""
@@ -88,27 +90,30 @@ def do_track(que, known_ship = None):
                     #print_cpa(decoded.mmsi, cpa_res)
                     tracker.update(decoded, cpa_res)
                     if danger(cpa_res):
-                        que.put( tracker.get_track(decoded.mmsi))
-                        print("Dangerous CPA detected for MMSI ", decoded.mmsi)
+                        que.put( tracker.get_track(decoded.mmsi)) # put dangerous track in queue
+                        log.info("Dangerous CPA detected for MMSI %s: %s", decoded.mmsi, cpa_res)
                 elif decoded.msg_type in [5,18,19,24]:
                     tracker.update(decoded, cpa_res)
-                    #print("Updated non position message for MMSI ", decoded )
+                    log.info("Updated non position message for MMSI %s", decoded.mmsi)
                 #latest_tracks = tracker.n_latest_tracks(10)
                 #print_tracks(latest_tracks)
                 #live_print(latest_tracks)
 
 
 if __name__ == '__main__':
-    VERBOSE = True
-    print(VERBOSE)
-    print(danger({'cpa':0.5,'tcpa':20,'distance':3}))
+    logging.basicConfig(filename='ais_stream.log', level=logging.ERROR)
+    print(logging.getLogger().level)
+    print("danger test 'cpa':0.5,'tcpa':20,'distance':3} %s", danger({'cpa':0.5,'tcpa':20,'distance':3}))
     my_ship = Ship(244030153, 53.26379, 7.39738,0,1.0)
     my_ship.start()
+    log.info("My ship started: %s", my_ship)
     warn_que = Queue(MAX_MESSAGES)
     p1 = Process(target=do_track, args=(warn_que,my_ship,))
     p1.start()
+    log.info("Tracking process started")
     p3 = Process(target=do_warn, args=(warn_que,))
     p3.start()
+    log.info("Warning process started")
     p1.join()
     p3.join()
     warn_que.close()
