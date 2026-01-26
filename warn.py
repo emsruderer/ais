@@ -130,7 +130,7 @@ def do_warn(que):
                 if bestemming and len(bestemming) > 0:
                     bericht += ", op weg naar  " + str.lower(bestemming)
             elif field.name == "bearing":
-                bericht += ", met peiling " + str_number(int(getattr(msg, field.name)))
+                bericht += ", met peiling " + str_number(int(getattr(msg, field.name))) + " graden"
             elif field.name == "last_updated":
                 print("Last updated:", getattr(msg, field.name))
             elif field.name == "status":

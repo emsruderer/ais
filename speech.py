@@ -1,7 +1,8 @@
 """
 Dutch AIS talker
 """
-
+import subprocess
+from subprocess import PIPE
 # Import the required module for text
 # to speech conversion
 from gtts import gTTS
@@ -11,11 +12,13 @@ from TTS.api import TTS
 
 # Get device
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-tts = TTS('tts_models/nl/css10/vits').to(DEVICE)
+
+tts = TTS('tts_models/multilingual/multi-dataset/xtts_v2').to(DEVICE)
+#tts = TTS('tts_models/nl/css10/vits').to(DEVICE)
+#print(tts.speakers)
+
 FILENAME = 'output.wav'
 
-#print(tts.speakers)
-#tts = TTS('tts_models/multilingual/multi-dataset/xtts_v2').to(DEVICE)
 
 
 spell_alphabet = {'A' : 'Alpha', 'B' :'Bravo', 'C': 'Charlie', 'D' : 'Delta', 'E': 'Echo', \
@@ -91,10 +94,17 @@ def say_number(number : int):
 def speak_tts(txt: str, filename = FILENAME):
     """ convert text to spoken dutch text """
     tts.tts_to_file(
-        text= txt, #speaker = 'Craig Gutsy', language = 'nl',
+        text= txt, speaker = 'Craig Gutsy', language = 'nl',
         file_path=filename
         )
     playsound( filename)
+
+def speak_tts_subprocess(txt: str, filename = FILENAME):
+    """ convert text to spoken dutch text using subprocess call """
+    command = "tts --text '" +txt+ "' --language_idx 'nl' --speaker_idx 'Craig Gutsy'  --model_name 'tts_models/multilingual/multi-dataset/xtts_v2' --out_path='" + filename + "'"
+    subprocess.run(command, shell=True, capture_output=True, text=True, check= True)
+    playsound( filename)
+
 
 # GTTs to a file
 def speak_gtts(txt: str, filename = FILENAME):
@@ -113,7 +123,8 @@ def speak(msg: str, soundfile=FILENAME):
     :param msg: string to speak
     :type msg: str
     """
-    speak_gtts(msg, soundfile )
+    #speak_gtts(msg, soundfile )
+    speak_tts_subprocess(msg, soundfile )
 
 
 if __name__ == "__main__":
