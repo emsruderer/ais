@@ -126,7 +126,7 @@ def do_warn(que):
             elif field.name == "heading":
                 heading = getattr(msg, field.name)
                 if heading != 511 and (heading >= course + 10 or heading <= course - 10):
-                    bericht += ", met heading " + str_number(round(heading)) + " graden, "
+                    bericht += ", met kompas koers " + str_number(round(heading)) + " graden"
             elif field.name == "ship_type":
                 t = getattr(msg, field.name)
                 if t :
@@ -150,7 +150,7 @@ def do_warn(que):
                 if waar:
                     maat = " meter"
                 else:
-                    maat = " mĳl"
+                    maat = " meil"
                 afstand = str_number(round(d)) + maat
                 bericht += ", nu op " + afstand
             elif field.name == "cpa":
@@ -159,7 +159,7 @@ def do_warn(que):
                 if waar:
                     maat = " meter"
                 else:
-                    maat = " mĳl"   # nautical mile dutch U+133E
+                    maat = " meil"   # nautical mile dutch U+133E ei instead of ij
                 cpa = str_number(round(sd)) + maat
                 bericht += ", kleinste afstand " + cpa
             elif field.name == "tcpa":
@@ -169,8 +169,9 @@ def do_warn(que):
                     maat = " uur"
                 else:
                     maat = " minuten"
-                tcpa = str_number(round(t)) + maat
-                bericht += ", over" + tcpa
+                if math.isfinite(t):
+                    tcpa = str_number(round(t)) + maat 
+                    bericht += ", over" + tcpa
             elif field.name == "approaching_speed":
                 approach_speed = getattr(msg, field.name)
                 if approach_speed is not None:

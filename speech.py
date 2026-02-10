@@ -150,7 +150,7 @@ if __name__ == "__main__":
     txt = "Naderend Nederlands schip met nul komma drie knopen, op koers driehonderd vijfendertig graden met roepnaam \
                           Papa Foxtrot twee negen vier zeven , scheepsnaam LAVERNA, type schip: vrachtvaarder, over zeven minuten, \
                          kleinste afstand driehonderd zesentachtig meter, \
-                         nu op vierhonderd achtenveertig meter, met peiling honderdtwintig graden"
+                         nu op vier mĳl, met peiling honderdtwintig graden"
     
     for k, v in spell_alphabet.items():
         print(k,v)
