@@ -51,7 +51,7 @@ def danger(cpa, minimum_cpa=MINIMUM_CPA,minimum_tcpa=MINIMUM_TCPA, minimum_dista
     """Determine if a CPA is dangerous."""
     assert 'cpa' in cpa and 'tcpa' in cpa and 'distance' in cpa, "cpa dict must contain 'cpa', 'tcpa' and 'distance' keys"
     # nautical miles
-    if  0.5< cpa['tcpa'] < minimum_tcpa and -minimum_cpa <cpa['cpa'] < minimum_cpa and cpa['distance'] < minimum_distance:
+    if  0.5< cpa['tcpa'] < minimum_tcpa and -minimum_cpa < cpa['cpa'] < minimum_cpa and cpa['distance'] < minimum_distance:
         return True
     return False
 

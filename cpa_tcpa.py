@@ -44,9 +44,10 @@ def cpa_tcpa(mmsi1, lat1, lon1, cog1, sog1,  mmsi2, lat2, lon2, cog2, sog2):
         v2x = v2 * sin(cog2)  # East component
         v2y = v2 * cos(cog2)  # North component
 
-        dvx = v2x - v1x  # relative speed in x (nm/min)
-        dvy = v2y - v1y  # relative speed in y (nm/min)
-        dv = sqrt(dvx**2 + dvy**2)  # relative speed
+        dvx = (v2x - v1x)  # relative speed in x (nm/hr)
+        dvy = (v2y - v1y)  # relative speed in y (nm/hr
+        dv = sqrt(dvx**2 + dvy**2)  # relative speed in nm/min
+        dv_60 = dv * 60  # relative speed in nm/hr
 
         d_lat = (lat1 - lat2) * 60  # in nautical miles
         d_lon = (lon1 - lon2) * 60 * cos( (lat1+lat2)/2 )  # in nautical miles
@@ -70,7 +71,7 @@ def cpa_tcpa(mmsi1, lat1, lon1, cog1, sog1,  mmsi2, lat2, lon2, cog2, sog2):
         bear = atan2(d_lon,d_lat) if d_lon  != 0 else 0
         bearing = degrees(bear) % 360
 
-        return { "cpa": cpa, "tcpa" : tcpa, "mmsi" : mmsi2, "distance": distance, "bearing": bearing, "approaching_speed": dv }
+        return { "cpa": cpa, "tcpa" : tcpa, "mmsi" : mmsi2, "distance": distance, "bearing": bearing, "approaching_speed": dv_60}
     except ZeroDivisionError as ex:
         print(ex, mmsi1 )
         return { "cpa": None, "tcpa" : None, "mmsi" : mmsi2, "distance": 0.0, "bearing": 0.0, "approaching_speed" : 0.0 }

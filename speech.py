@@ -28,7 +28,7 @@ spell_alphabet = {'A' : 'Alpha', 'B' :'Bravo', 'C': 'Charlie', 'D' : 'Delta', 'E
                   'Q': 'Quebec', 'R':'Romeo','S':'Sierra','T':'Tango','U':'Uniform',\
                   'V':'Victor','W':'Whiskey','X':'X-ray',\
                   'Y':'Yanke','Z':'Zoulou','0':'null','1':'één','2':'twee','3':'drie','4':'vier',\
-                  '5':'vijf','6':'zes','7':'zeven','8':'acht','9':'negen'}
+                  '5':'vijf','6':'zes','7':'zeven','8':'acht','9':'negen',' ':' '}
 
 nl_number = [ "nul", " één", "twee", "drie","vier", "vijf", "zes", "zeven",\
               "acht", "negen", "tien",\
@@ -70,8 +70,10 @@ def str_number(number:float):
     """ convert number to spoken dutch text """
     if number < 0:
         return "min " + str_getal(-number)
-    if number < 1.0:
-        return "nul komma " + str_getal(int(number*10))
+    if 0 < number < 1.0:
+        return "nul komma " + str_getal(round(number*10))
+    elif number== 0:
+        return "nul"
     return str_getal(int(number))
 
 
@@ -123,8 +125,8 @@ def speak(msg: str, soundfile=FILENAME):
     :param msg: string to speak
     :type msg: str
     """
-    #speak_gtts(msg, soundfile )
-    speak_tts_subprocess(msg, soundfile )
+    speak_gtts(msg, soundfile )
+    #speak_tts_subprocess(msg, soundfile )
 
 
 if __name__ == "__main__":
@@ -134,7 +136,7 @@ if __name__ == "__main__":
     speak(str_number(0.5))
     speak(str_number(-3))
     speak("Een Nederlandse tekst")
-    speak("AIS spraak bericht systeem gestart")
+    speak("A.I.S spraak bericht systeem gestart")
     speak("Schip naam " + 'mijn boot')
     speak("MMSI " + str_number(264030000))
     speak("Oproep teken " + spell_callsign('PC1234'))

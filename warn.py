@@ -27,6 +27,7 @@ log.setLevel("INFO")
 FIELDS = dataclasses.fields(CPATrack)
 wait_dict = {}
 
+
 def next_call(tcpa):
     """Calculate the next call time based on tcpa"""
     return time.time() + (tcpa * 60)/2
@@ -74,7 +75,6 @@ def repeat_call(mmsi, tcpa):
         wait_dict[mmsi] = next_call(tcpa)
         return True
 
-
 def nm_to_meters(nm):
     """Convert nautical miles to meters if less than 1 nM, otherwise no change."""
     if 0.0 < nm < 1.0 :
@@ -89,6 +89,10 @@ def min_to_hr(minutes):
 
 def do_warn(que):
     """ do warning based on ais tracks """
+    tiep = "onbekende"
+    afstand = "onbekend"
+    cpa = "onbekend"
+    tcpa = "onbekend"
     while True:
         msg = que.get()
         bericht = ""
@@ -102,7 +106,9 @@ def do_warn(que):
             if field.name == "mmsi":
                 mmsi = getattr(msg, field.name)
                 #bericht += "MMSI " + str_number(mmsi) + " "
-                bericht = "Naderend " + nationaliteit(mmsi) + "schip "
+                bericht = "Naderende " + nationaliteit(mmsi)
+                if tiep == "onbekende":
+                    tiep = nationaliteit(mmsi)
             elif field.name == "shipname":
                 shipname = getattr(msg, field.name)
                 if shipname is not None:
@@ -115,22 +121,24 @@ def do_warn(que):
                 course = getattr(msg, field.name)
                 bericht += ", op koers " + str_number(int(course)) + " graden"
             elif field.name == "speed":
-                bericht += "met " + str_number(int(getattr(msg, field.name))) + " knopen"
+                speed = round(getattr(msg, field.name))
+                bericht += "met " + str_number( speed) + " knopen"
             elif field.name == "heading":
                 heading = getattr(msg, field.name)
                 if heading != 511 and (heading >= course + 10 or heading <= course - 10):
-                    bericht += ", met heading " + str_number(int(heading)) + " graden, "
+                    bericht += ", met heading " + str_number(round(heading)) + " graden, "
             elif field.name == "ship_type":
                 t = getattr(msg, field.name)
                 if t :
                     soort = shiptype(t)
-                    bericht += ", type schip: " + str.lower(soort)
+                    bericht = "Naderende " + str.lower(soort)
             elif field.name == "destination":
                 bestemming = getattr(msg, field.name)
                 if bestemming and len(bestemming) > 0:
-                    bericht += ", op weg naar  " + str.lower(bestemming)
+                    bericht += ", op weg naar " + str.lower(bestemming)
             elif field.name == "bearing":
-                bericht += ", met peiling " + str_number(int(getattr(msg, field.name))) + " graden"
+                richting = str_number(round(getattr(msg, field.name)))
+                bericht += ", met peiling " + richting + " graden"
             elif field.name == "last_updated":
                 print("Last updated:", getattr(msg, field.name))
             elif field.name == "status":
@@ -138,30 +146,41 @@ def do_warn(que):
             elif field.name == "turn":
                 print("Turn:", getattr(msg, field.name))
             elif field.name == "distance":
-                afstand, waar = nm_to_meters( getattr(msg, field.name))
+                d, waar = nm_to_meters( getattr(msg, field.name))
                 if waar:
                     maat = " meter"
                 else:
-                    maat = " mijl"
-                bericht += ", nu op " + str_number(int(afstand)) + maat
+                    maat = " mĳl"
+                afstand = str_number(round(d)) + maat
+                bericht += ", nu op " + afstand
             elif field.name == "cpa":
-                cpa = getattr(msg, field.name)
-                cpa, waar = nm_to_meters(cpa)
+                sd = getattr(msg, field.name)
+                sd, waar = nm_to_meters(sd)
                 if waar:
                     maat = " meter"
                 else:
-                    maat = " mijl"
-                bericht += ", kleinste afstand " + str_number(int(cpa)) + maat
+                    maat = " mĳl"   # nautical mile dutch U+133E
+                cpa = str_number(round(sd)) + maat
+                bericht += ", kleinste afstand " + cpa
             elif field.name == "tcpa":
-                tcpa = getattr(msg, field.name)
-                tcpa, waar = min_to_hr(tcpa)
+                tijd = getattr(msg, field.name)
+                t, waar = min_to_hr(tijd)
                 if waar:
                     maat = " uur"
                 else:
                     maat = " minuten"
-                bericht += ", over " + str_number(int(tcpa)) + maat
+                tcpa = str_number(round(t)) + maat
+                bericht += ", over" + tcpa
+            elif field.name == "approaching_speed":
+                approach_speed = getattr(msg, field.name)
+                if approach_speed is not None:
+                    approaching_speed = str_number(round(approach_speed))
+                    bericht += ", met naderingssnelheid " + approaching_speed + " knopen"
         if isinstance(msg, CPATrack) :
             log.info("Bericht generated: %s", bericht)
+            print("Bericht generated:", bericht)
+            waarschuwing = f"Waarschuwing: Naderende {tiep} op {afstand}, kleinste afstand {cpa}, over {tcpa}, op peiling {richting} graden, naderend met snelheid {approach_speed} knopen."
+            print(waarschuwing)
             warning =  bericht
             if repeat_call(msg.mmsi, msg.tcpa):
                 log.info("Issuing warning: %s", warning )
