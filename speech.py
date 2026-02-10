@@ -3,12 +3,14 @@ Dutch AIS talker
 """
 import subprocess
 from subprocess import PIPE
+import wave
 # Import the required module for text
 # to speech conversion
 from gtts import gTTS
 from playsound3 import playsound
 import torch
 from TTS.api import TTS
+from piper import PiperVoice, SynthesisConfig
 
 # Get device
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -17,9 +19,18 @@ tts = TTS('tts_models/multilingual/multi-dataset/xtts_v2').to(DEVICE)
 #tts = TTS('tts_models/nl/css10/vits').to(DEVICE)
 #print(tts.speakers)
 
-FILENAME = 'output.wav'
+voice = PiperVoice.load("/home/nanno/ais/models/nl_NL-ronnie-medium.onnx", use_cuda = torch.cuda.is_available())
 
+# Adjust synthesis:
+syn_config = SynthesisConfig(
+    volume=1.5,  # half as loud
+    length_scale=0.9,  # twice as slow
+    noise_scale=1.0,  # more audio variation
+    noise_w_scale=1.1,  # more speaking variation
+    normalize_audio=False, # use raw audio from voice
+)
 
+FILENAME = 'audio.wav'
 
 spell_alphabet = {'A' : 'Alpha', 'B' :'Bravo', 'C': 'Charlie', 'D' : 'Delta', 'E': 'Echo', \
                   'F' : 'Foxtrot', 'G': 'Golf', 'H': 'Hotel',\
@@ -54,12 +65,12 @@ def str_getal(number):
         return  nl_number[number%10] + "en" +nl_tientallen[number//10]
     if number < 3000:
         if number // 100 < 2:
-            return "honderd" + str_getal(number%100)
+            return "honderd " + str_getal(number%100)
         if number // 100 == 10:
             return "duizend " + str_getal(number%1000)
-        return str_getal(number//100) + "honderd" +str_getal(number%100)
+        return str_getal(number//100) + "honderd " +str_getal(number%100)
     if number < 10000:
-        return nl_number[number//1000] + "duizend" + str_getal(number%1000)
+        return nl_number[number//1000] + "duizend " + str_getal(number%1000)
     if number < 1000000:
         return str_getal(number//1000) + "duizend " + str_getal(number%1000)
     if number < 1000000000:
@@ -107,6 +118,12 @@ def speak_tts_subprocess(txt: str, filename = FILENAME):
     subprocess.run(command, shell=True, capture_output=True, text=True, check= True)
     playsound( filename)
 
+def speak_piper(txt: str, filename = FILENAME):
+    with wave.open(filename, "wb") as wav_file:
+        wav_file.setframerate(16000)
+        voice.synthesize_wav(txt,wav_file, syn_config=syn_config,)
+    playsound(filename)
+
 
 # GTTs to a file
 def speak_gtts(txt: str, filename = FILENAME):
@@ -125,17 +142,22 @@ def speak(msg: str, soundfile=FILENAME):
     :param msg: string to speak
     :type msg: str
     """
-    speak_gtts(msg, soundfile )
+    speak_piper(msg, soundfile )
     #speak_tts_subprocess(msg, soundfile )
 
 
 if __name__ == "__main__":
+    txt = "Naderend Nederlands schip met nul komma drie knopen, op koers driehonderd vijfendertig graden met roepnaam \
+                          Papa Foxtrot twee negen vier zeven , scheepsnaam LAVERNA, type schip: vrachtvaarder, over zeven minuten, \
+                         kleinste afstand driehonderd zesentachtig meter, \
+                         nu op vierhonderd achtenveertig meter, met peiling honderdtwintig graden"
+    
     for k, v in spell_alphabet.items():
         print(k,v)
     print(spell_callsign('PC1234'))
     speak(str_number(0.5))
     speak(str_number(-3))
-    speak("Een Nederlandse tekst")
+    speak(txt)
     speak("A.I.S spraak bericht systeem gestart")
     speak("Schip naam " + 'mijn boot')
     speak("MMSI " + str_number(264030000))
@@ -150,5 +172,4 @@ if __name__ == "__main__":
         speak(str_number(i))
     for i in range(2995,3005):
         speak(str_number(i))
-    #say_number(0)
-    #say_number(244030153)
+    
